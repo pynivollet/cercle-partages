@@ -167,6 +167,17 @@ export const translations = {
       november: "Novembre",
       december: "Décembre",
     },
+    // Categories
+    categories: {
+      title: "Catégorie",
+      geopolitique: "Géopolitique",
+      enjeux_climatiques: "Enjeux climatiques",
+      societe_violences: "Société : regards en épisodes sur les violences contemporaines",
+      idees_cultures_humanites: "Idées, cultures et humanités",
+      arts_artistes: "Arts & artistes",
+      economie_locale: "Économie locale",
+      science_moderne: "Science moderne",
+    },
   },
   en: {
     // Navigation
@@ -335,6 +346,17 @@ export const translations = {
       october: "October",
       november: "November",
       december: "December",
+    },
+    // Categories
+    categories: {
+      title: "Category",
+      geopolitique: "Geopolitics",
+      enjeux_climatiques: "Climate Issues",
+      societe_violences: "Society: insights on contemporary violence",
+      idees_cultures_humanites: "Ideas, cultures & humanities",
+      arts_artistes: "Arts & artists",
+      economie_locale: "Local economy",
+      science_moderne: "Modern science",
     },
   },
 } as const;

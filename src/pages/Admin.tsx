@@ -34,6 +34,7 @@ type Event = Database["public"]["Tables"]["events"]["Row"];
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
 type EventStatus = Database["public"]["Enums"]["event_status"];
+type EventCategory = Database["public"]["Enums"]["event_category"];
 
 const Admin = () => {
   const { t } = useLanguage();
@@ -60,6 +61,7 @@ const Admin = () => {
   const [eventLimit, setEventLimit] = useState("");
   const [eventPresenterId, setEventPresenterId] = useState("");
   const [eventStatus, setEventStatus] = useState<EventStatus>("draft");
+  const [eventCategory, setEventCategory] = useState<EventCategory | "">("");
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -122,6 +124,7 @@ const Admin = () => {
       presenter_id: eventPresenterId || null,
       status: eventStatus,
       created_by: user.id,
+      category: eventCategory || null,
     });
 
     if (error) {
@@ -144,6 +147,12 @@ const Admin = () => {
     setEventLimit("");
     setEventPresenterId("");
     setEventStatus("draft");
+    setEventCategory("");
+  };
+
+  const getCategoryLabel = (category: string | null) => {
+    if (!category) return "";
+    return t.categories[category as keyof typeof t.categories] || category;
   };
 
   const handleStatusChange = async (eventId: string, newStatus: EventStatus) => {
@@ -425,6 +434,26 @@ const Admin = () => {
                                 {presenter.first_name} {presenter.last_name}
                               </SelectItem>
                             ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>{t.categories.title}</Label>
+                        <Select
+                          value={eventCategory}
+                          onValueChange={(v) => setEventCategory(v as EventCategory)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="geopolitique">{t.categories.geopolitique}</SelectItem>
+                            <SelectItem value="enjeux_climatiques">{t.categories.enjeux_climatiques}</SelectItem>
+                            <SelectItem value="societe_violences">{t.categories.societe_violences}</SelectItem>
+                            <SelectItem value="idees_cultures_humanites">{t.categories.idees_cultures_humanites}</SelectItem>
+                            <SelectItem value="arts_artistes">{t.categories.arts_artistes}</SelectItem>
+                            <SelectItem value="economie_locale">{t.categories.economie_locale}</SelectItem>
+                            <SelectItem value="science_moderne">{t.categories.science_moderne}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

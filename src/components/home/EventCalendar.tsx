@@ -5,8 +5,10 @@ import { getUpcomingEvents, EventWithPresenter } from "@/services/events";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const EventCalendar = () => {
+  const { t } = useLanguage();
   const [events, setEvents] = useState<EventWithPresenter[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,6 +37,11 @@ const EventCalendar = () => {
     const firstName = presenter.first_name || "";
     const lastName = presenter.last_name || "";
     return `${firstName} ${lastName}`.trim() || "Intervenant";
+  };
+
+  const getCategoryLabel = (category: string | null) => {
+    if (!category) return null;
+    return t.categories[category as keyof typeof t.categories] || category;
   };
 
   return (
@@ -107,9 +114,9 @@ const EventCalendar = () => {
 
                       {/* Content */}
                       <div className="col-span-9 md:col-span-7">
-                        {event.topic && (
+                        {getCategoryLabel(event.category) && (
                           <p className="font-sans text-xs tracking-wide uppercase text-ochre mb-2">
-                            {event.topic}
+                            {getCategoryLabel(event.category)}
                           </p>
                         )}
                         <h3 className="font-serif text-xl md:text-2xl text-foreground group-hover:text-primary transition-colors mb-2">
