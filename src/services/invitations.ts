@@ -11,25 +11,34 @@ export interface ValidateInvitationResult {
 }
 
 export const validateInvitationToken = async (token: string): Promise<ValidateInvitationResult> => {
+  // Use the secure RPC function instead of direct table access
   const { data, error } = await supabase
-    .from("invitations")
-    .select("*")
-    .eq("token", token)
-    .single();
+    .rpc("validate_invitation_token", { invitation_token: token });
 
-  if (error || !data) {
+  if (error || !data || data.length === 0) {
     return { valid: false, error: "Invalid invitation code" };
   }
 
-  if (data.status === "used") {
-    return { valid: false, error: "This invitation has already been used" };
-  }
-
-  if (data.status === "expired" || new Date(data.expires_at) < new Date()) {
-    return { valid: false, error: "This invitation has expired" };
-  }
-
-  return { valid: true, invitation: data };
+  const invitation = data[0];
+  
+  // The RPC function already filters for pending and non-expired invitations
+  // So if we get a result, it's valid
+  return { 
+    valid: true, 
+    invitation: {
+      id: invitation.id,
+      email: invitation.email,
+      role: invitation.role,
+      status: invitation.status,
+      expires_at: invitation.expires_at,
+      // These fields are not returned by the RPC for security, set defaults
+      token: token,
+      created_by: null,
+      used_by: null,
+      used_at: null,
+      created_at: invitation.expires_at, // Not available, use expires_at as placeholder
+    } as Invitation
+  };
 };
 
 export const createInvitation = async (
