@@ -16,71 +16,73 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <LanguageProvider>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/connexion" element={<Login />} />
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Index />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/rencontre/:id"
-                element={
-                  <ProtectedRoute>
-                    <EventDetail />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/rencontres"
-                element={
-                  <ProtectedRoute>
-                    <Index />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/presentateur/:id"
-                element={
-                  <ProtectedRoute>
-                    <PresenterProfile />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/archives"
-                element={
-                  <ProtectedRoute>
-                    <Archives />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute requiredRoles={["admin"]}>
-                    <Admin />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </LanguageProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/connexion" element={<Login />} />
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <Index />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/rencontre/:id"
+                  element={
+                    <ProtectedRoute>
+                      <EventDetail />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/rencontres"
+                  element={
+                    <ProtectedRoute>
+                      <Index />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/presentateur/:id"
+                  element={
+                    <ProtectedRoute>
+                      <PresenterProfile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/archives"
+                  element={
+                    <ProtectedRoute>
+                      <Archives />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute requiredRoles={["admin"]}>
+                      <Admin />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
