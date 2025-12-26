@@ -234,7 +234,7 @@ const Login = () => {
                   <Input
                     id="password"
                     type={showLoginPassword ? "text" : "password"}
-                    placeholder="••••••••"
+                    placeholder=""
                     className="h-12 bg-transparent border-border focus:border-foreground pr-12"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -344,7 +344,7 @@ const Login = () => {
                   <Input
                     id="signupPassword"
                     type={showSignupPassword ? "text" : "password"}
-                    placeholder="••••••••"
+                    placeholder=""
                     className="h-12 bg-transparent border-border focus:border-foreground pr-12"
                     value={signupPassword}
                     onChange={(e) => setSignupPassword(e.target.value)}
@@ -369,7 +369,7 @@ const Login = () => {
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
-                    placeholder="••••••••"
+                    placeholder=""
                     className="h-12 bg-transparent border-border focus:border-foreground pr-12"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
