@@ -1,14 +1,16 @@
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { Globe } from "lucide-react";
+import { Globe, Menu, X } from "lucide-react";
 
 const Header = () => {
   const location = useLocation();
   const { user, isAdmin, signOut } = useAuth();
   const { t, language, toggleLanguage } = useLanguage();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
     { label: t.nav.home, path: "/" },
@@ -18,7 +20,10 @@ const Header = () => {
 
   const handleLogout = async () => {
     await signOut();
+    setMobileMenuOpen(false);
   };
+
+  const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
     <motion.header
@@ -33,11 +38,12 @@ const Header = () => {
           <Link 
             to="/" 
             className="font-serif text-xl md:text-2xl tracking-tight text-foreground hover:text-primary transition-colors"
+            onClick={closeMobileMenu}
           >
             Cercle Partages
           </Link>
 
-          {/* Navigation */}
+          {/* Desktop Navigation */}
           <ul className="hidden md:flex items-center gap-8">
             {navItems.map((item) => (
               <li key={item.path}>
@@ -95,27 +101,104 @@ const Header = () => {
               <span className="uppercase">{language}</span>
             </button>
 
-            {/* Auth */}
-            {user ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="text-sm font-sans text-muted-foreground hover:text-foreground"
-              >
-                {t.nav.logout}
-              </Button>
-            ) : (
-              <Link
-                to="/connexion"
-                className="text-sm font-sans text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {t.nav.login}
-              </Link>
-            )}
+            {/* Desktop Auth */}
+            <div className="hidden md:block">
+              {user ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="text-sm font-sans text-muted-foreground hover:text-foreground"
+                >
+                  {t.nav.logout}
+                </Button>
+              ) : (
+                <Link
+                  to="/connexion"
+                  className="text-sm font-sans text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {t.nav.login}
+                </Link>
+              )}
+            </div>
+
+            {/* Mobile Menu Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 text-foreground"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </nav>
       </div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden bg-background border-t border-border/50"
+          >
+            <div className="editorial-container py-4">
+              <ul className="space-y-2">
+                {navItems.map((item) => (
+                  <li key={item.path}>
+                    <Link
+                      to={item.path}
+                      onClick={closeMobileMenu}
+                      className={`block py-2 text-sm font-sans transition-colors ${
+                        location.pathname === item.path
+                          ? "text-foreground font-medium"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+                {isAdmin && (
+                  <li>
+                    <Link
+                      to="/admin"
+                      onClick={closeMobileMenu}
+                      className={`block py-2 text-sm font-sans transition-colors ${
+                        location.pathname === "/admin"
+                          ? "text-foreground font-medium"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {t.nav.admin}
+                    </Link>
+                  </li>
+                )}
+                <li className="pt-2 border-t border-border/50">
+                  {user ? (
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left py-2 text-sm font-sans text-muted-foreground"
+                    >
+                      {t.nav.logout}
+                    </button>
+                  ) : (
+                    <Link
+                      to="/connexion"
+                      onClick={closeMobileMenu}
+                      className="block py-2 text-sm font-sans text-muted-foreground"
+                    >
+                      {t.nav.login}
+                    </Link>
+                  )}
+                </li>
+              </ul>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.header>
   );
 };
