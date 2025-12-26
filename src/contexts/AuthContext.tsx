@@ -125,7 +125,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     invitationToken: string,
     metadata?: { first_name?: string; last_name?: string }
   ) => {
-    const redirectUrl = `${window.location.origin}/`;
+    const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+    const redirectUrl = `${baseUrl}/`;
     
     const { error } = await supabase.auth.signUp({
       email,
