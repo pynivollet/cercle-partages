@@ -62,5 +62,8 @@ export const getInvitations = async () => {
 };
 
 export const generateInvitationLink = (token: string): string => {
-  return `${window.location.origin}/connexion?invitation=${token}`;
+  // Use VITE_APP_URL if set, otherwise fallback to window.location.origin
+  // This ensures links work correctly when generated from the Lovable editor
+  const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+  return `${baseUrl}/connexion?invitation=${token}`;
 };
