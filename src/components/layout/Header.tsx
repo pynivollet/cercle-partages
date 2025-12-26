@@ -1,14 +1,24 @@
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/i18n/LanguageContext";
+import { Button } from "@/components/ui/button";
+import { Globe } from "lucide-react";
 
 const Header = () => {
   const location = useLocation();
+  const { user, isAdmin, signOut } = useAuth();
+  const { t, language, toggleLanguage } = useLanguage();
 
   const navItems = [
-    { label: "Accueil", path: "/" },
-    { label: "Rencontres", path: "/rencontres" },
-    { label: "Archives", path: "/archives" },
+    { label: t.nav.home, path: "/" },
+    { label: t.nav.events, path: "/rencontres" },
+    { label: t.nav.archives, path: "/archives" },
   ];
+
+  const handleLogout = async () => {
+    await signOut();
+  };
 
   return (
     <motion.header
@@ -50,15 +60,60 @@ const Header = () => {
                 </Link>
               </li>
             ))}
+            {isAdmin && (
+              <li>
+                <Link
+                  to="/admin"
+                  className={`text-sm font-sans tracking-wide transition-colors relative ${
+                    location.pathname === "/admin"
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t.nav.admin}
+                  {location.pathname === "/admin" && (
+                    <motion.div
+                      layoutId="activeNav"
+                      className="absolute -bottom-1 left-0 right-0 h-px bg-foreground"
+                      transition={{ duration: 0.3 }}
+                    />
+                  )}
+                </Link>
+              </li>
+            )}
           </ul>
 
-          {/* Login Link */}
-          <Link
-            to="/connexion"
-            className="text-sm font-sans text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Connexion
-          </Link>
+          {/* Right Side */}
+          <div className="flex items-center gap-4">
+            {/* Language Toggle */}
+            <button
+              onClick={toggleLanguage}
+              className="flex items-center gap-1 text-sm font-sans text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Toggle language"
+            >
+              <Globe className="w-4 h-4" />
+              <span className="uppercase">{language}</span>
+            </button>
+
+            {/* Auth */}
+            {user ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-sm font-sans text-muted-foreground hover:text-foreground"
+              >
+                {t.nav.logout}
+              </Button>
+            ) : (
+              <Link
+                to="/connexion"
+                className="text-sm font-sans text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {t.nav.login}
+              </Link>
+            )}
+          </div>
         </nav>
       </div>
     </motion.header>
