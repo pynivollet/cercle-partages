@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { ArrowUpDown, Calendar, MapPin, Tag } from "lucide-react";
+import { ArrowUpDown, Calendar, Filter, MapPin, Tag } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -20,6 +20,7 @@ import {
 
 type SortField = "date" | "category" | "location";
 type SortOrder = "asc" | "desc";
+type StatusFilter = "all" | "upcoming" | "past";
 
 const Events = () => {
   const { t } = useLanguage();
@@ -27,6 +28,7 @@ const Events = () => {
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -45,8 +47,24 @@ const Events = () => {
     return t.categories[key] || category;
   };
 
-  const sortedEvents = useMemo(() => {
-    return [...events].sort((a, b) => {
+  const filteredAndSortedEvents = useMemo(() => {
+    const now = new Date();
+    
+    // Filter by status
+    const filtered = events.filter((event) => {
+      const eventDate = new Date(event.event_date);
+      switch (statusFilter) {
+        case "upcoming":
+          return eventDate >= now;
+        case "past":
+          return eventDate < now;
+        default:
+          return true;
+      }
+    });
+
+    // Sort
+    return filtered.sort((a, b) => {
       let comparison = 0;
 
       switch (sortField) {
@@ -63,7 +81,7 @@ const Events = () => {
 
       return sortOrder === "asc" ? comparison : -comparison;
     });
-  }, [events, sortField, sortOrder]);
+  }, [events, sortField, sortOrder, statusFilter]);
 
   const toggleSortOrder = () => {
     setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -94,13 +112,31 @@ const Events = () => {
             </p>
           </motion.div>
 
-          {/* Sort Controls */}
+          {/* Filters and Sort Controls */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
             className="flex flex-wrap gap-4 mb-8 items-center"
           >
+            {/* Status Filter */}
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous</SelectItem>
+                  <SelectItem value="upcoming">À venir</SelectItem>
+                  <SelectItem value="past">Passés</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="h-6 w-px bg-border hidden sm:block" />
+
+            {/* Sort */}
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Trier par :</span>
               <Select value={sortField} onValueChange={(value) => setSortField(value as SortField)}>
@@ -147,13 +183,13 @@ const Events = () => {
                 <Skeleton key={i} className="h-24 w-full" />
               ))}
             </div>
-          ) : events.length === 0 ? (
+          ) : filteredAndSortedEvents.length === 0 ? (
             <p className="text-muted-foreground text-center py-12">
-              {t.calendar.noEvents}
+              {statusFilter === "upcoming" ? "Aucun événement à venir" : statusFilter === "past" ? "Aucun événement passé" : t.calendar.noEvents}
             </p>
           ) : (
             <div className="space-y-4">
-              {sortedEvents.map((event, index) => (
+              {filteredAndSortedEvents.map((event, index) => (
                 <motion.div
                   key={event.id}
                   initial={{ opacity: 0, y: 10 }}
