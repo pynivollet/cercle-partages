@@ -23,11 +23,12 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { getInvitations, createInvitation, generateInvitationLink } from "@/services/invitations";
 import { getAllEvents, createEvent, updateEvent } from "@/services/events";
-import { getPresenters } from "@/services/profiles";
+import { getPresenters, getAllProfiles } from "@/services/profiles";
 import { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { Copy, Plus } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import PresenterManagement from "@/components/admin/PresenterManagement";
 
 type Invitation = Database["public"]["Tables"]["invitations"]["Row"];
 type Event = Database["public"]["Tables"]["events"]["Row"];
@@ -39,10 +40,11 @@ type EventCategory = Database["public"]["Enums"]["event_category"];
 const Admin = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<"invitations" | "events">("invitations");
+  const [activeTab, setActiveTab] = useState<"invitations" | "events" | "presenters">("invitations");
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [presenters, setPresenters] = useState<Profile[]>([]);
+  const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Invitation form state
@@ -65,15 +67,17 @@ const Admin = () => {
 
   const fetchData = async () => {
     setIsLoading(true);
-    const [invitationsRes, eventsRes, presentersRes] = await Promise.all([
+    const [invitationsRes, eventsRes, presentersRes, allProfilesRes] = await Promise.all([
       getInvitations(),
       getAllEvents(),
       getPresenters(),
+      getAllProfiles(),
     ]);
     
     if (invitationsRes.data) setInvitations(invitationsRes.data);
     if (eventsRes.data) setEvents(eventsRes.data);
     if (presentersRes.data) setPresenters(presentersRes.data);
+    if (allProfilesRes.data) setAllProfiles(allProfilesRes.data);
     setIsLoading(false);
   };
 
@@ -244,6 +248,22 @@ const Admin = () => {
                 />
               )}
             </button>
+            <button
+              onClick={() => setActiveTab("presenters")}
+              className={`pb-4 font-sans text-sm transition-colors relative ${
+                activeTab === "presenters"
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t.admin.presenters}
+              {activeTab === "presenters" && (
+                <motion.div
+                  layoutId="adminTab"
+                  className="absolute bottom-0 left-0 right-0 h-px bg-foreground"
+                />
+              )}
+            </button>
           </div>
 
           {isLoading ? (
@@ -339,7 +359,7 @@ const Admin = () => {
                 </div>
               )}
             </motion.div>
-          ) : (
+          ) : activeTab === "events" ? (
             /* Events Tab */
             <motion.div
               key="events"
@@ -519,7 +539,13 @@ const Admin = () => {
                 </div>
               )}
             </motion.div>
-          )}
+          ) : activeTab === "presenters" ? (
+            <PresenterManagement
+              presenters={presenters}
+              allProfiles={allProfiles}
+              onPresentersChange={fetchData}
+            />
+          ) : null}
         </section>
       </main>
       <Footer />
