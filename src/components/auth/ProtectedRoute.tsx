@@ -1,4 +1,4 @@
-import React from "react";
+import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Database } from "@/integrations/supabase/types";
@@ -6,14 +6,11 @@ import { Database } from "@/integrations/supabase/types";
 type AppRole = Database["public"]["Enums"]["app_role"];
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
+  children: ReactNode;
   requiredRoles?: AppRole[];
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  children, 
-  requiredRoles = [] 
-}) => {
+function ProtectedRoute({ children, requiredRoles = [] }: ProtectedRouteProps) {
   const { user, roles, isLoading } = useAuth();
   const location = useLocation();
 
@@ -36,6 +33,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   return <>{children}</>;
-};
+}
 
 export default ProtectedRoute;
