@@ -17,23 +17,23 @@ const Hero = () => {
       {/* Content */}
       <div className="editorial-container relative z-10 pt-32 pb-20">
         <div className="max-w-3xl">
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="font-sans text-sm tracking-widest uppercase text-muted-foreground mb-6"
-          >
-            Sur invitation uniquement
-          </motion.p>
-
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-display text-foreground mb-4"
+          >
+            Cercle Partages
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-display text-foreground mb-8"
+            className="text-2xl md:text-3xl font-serif italic text-muted-foreground mb-8"
           >
             L'appétit pour l'altérité
-          </motion.h1>
+          </motion.p>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
