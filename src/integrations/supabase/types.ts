@@ -48,6 +48,7 @@ export type Database = {
       }
       events: {
         Row: {
+          category: Database["public"]["Enums"]["event_category"] | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -62,6 +63,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category?: Database["public"]["Enums"]["event_category"] | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -76,6 +78,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category?: Database["public"]["Enums"]["event_category"] | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -274,6 +277,14 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "presenter" | "participant"
+      event_category:
+        | "geopolitique"
+        | "enjeux_climatiques"
+        | "societe_violences"
+        | "idees_cultures_humanites"
+        | "arts_artistes"
+        | "economie_locale"
+        | "science_moderne"
       event_status: "draft" | "published" | "cancelled" | "completed"
       invitation_status: "pending" | "used" | "expired"
       registration_status: "confirmed" | "waitlist" | "cancelled"
@@ -405,6 +416,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "presenter", "participant"],
+      event_category: [
+        "geopolitique",
+        "enjeux_climatiques",
+        "societe_violences",
+        "idees_cultures_humanites",
+        "arts_artistes",
+        "economie_locale",
+        "science_moderne",
+      ],
       event_status: ["draft", "published", "cancelled", "completed"],
       invitation_status: ["pending", "used", "expired"],
       registration_status: ["confirmed", "waitlist", "cancelled"],
