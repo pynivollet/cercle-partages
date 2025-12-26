@@ -8,9 +8,10 @@ import { LanguageProvider } from "@/i18n/LanguageContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import EventDetail from "./pages/EventDetail";
+import Events from "./pages/Events";
+import Presenters from "./pages/Presenters";
 import Login from "./pages/Login";
 import PresenterProfile from "./pages/PresenterProfile";
-import Archives from "./pages/Archives";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -44,10 +45,18 @@ function App() {
                   }
                 />
                 <Route
-                  path="/rencontres"
+                  path="/evenements"
                   element={
                     <ProtectedRoute>
-                      <Index />
+                      <Events />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/intervenants"
+                  element={
+                    <ProtectedRoute>
+                      <Presenters />
                     </ProtectedRoute>
                   }
                 />
@@ -56,14 +65,6 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <PresenterProfile />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/archives"
-                  element={
-                    <ProtectedRoute>
-                      <Archives />
                     </ProtectedRoute>
                   }
                 />

@@ -12,8 +12,8 @@ const Header = () => {
 
   const navItems = [
     { label: t.nav.home, path: "/" },
-    { label: t.nav.events, path: "/rencontres" },
-    { label: t.nav.archives, path: "/archives" },
+    { label: t.nav.events, path: "/evenements" },
+    { label: "Intervenants", path: "/intervenants" },
   ];
 
   const handleLogout = async () => {
