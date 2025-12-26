@@ -3,8 +3,8 @@ export const translations = {
     // Navigation
     nav: {
       home: "Accueil",
-      events: "Rencontres",
-      archives: "Archives",
+      events: "Événements",
+      presenters: "Intervenants",
       login: "Connexion",
       logout: "Déconnexion",
       admin: "Administration",
@@ -184,7 +184,7 @@ export const translations = {
     nav: {
       home: "Home",
       events: "Events",
-      archives: "Archives",
+      presenters: "Presenters",
       login: "Login",
       logout: "Logout",
       admin: "Admin",
