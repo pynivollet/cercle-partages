@@ -1,51 +1,42 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-
-interface Event {
-  id: string;
-  date: string;
-  month: string;
-  year: string;
-  title: string;
-  presenter: string;
-  theme: string;
-  location: string;
-}
-
-const upcomingEvents: Event[] = [
-  {
-    id: "1",
-    date: "16",
-    month: "Janvier",
-    year: "2025",
-    title: "L'architecture face au climat",
-    presenter: "Marie-Claire Dupont",
-    theme: "Architecture & Écologie",
-    location: "Paris, 7e",
-  },
-  {
-    id: "2",
-    date: "06",
-    month: "Février",
-    year: "2025",
-    title: "La transmission du savoir artisanal",
-    presenter: "Jean-Pierre Moreau",
-    theme: "Culture & Métiers",
-    location: "Paris, 3e",
-  },
-  {
-    id: "3",
-    date: "27",
-    month: "Février",
-    year: "2025",
-    title: "Art contemporain et mémoire collective",
-    presenter: "Sophie Laurent",
-    theme: "Art & Société",
-    location: "Paris, 11e",
-  },
-];
+import { useEffect, useState } from "react";
+import { getUpcomingEvents, EventWithPresenter } from "@/services/events";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const EventCalendar = () => {
+  const [events, setEvents] = useState<EventWithPresenter[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      const { data, error } = await getUpcomingEvents();
+      if (data && !error) {
+        setEvents(data);
+      }
+      setLoading(false);
+    };
+    fetchEvents();
+  }, []);
+
+  const formatEventDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return {
+      day: format(date, "dd", { locale: fr }),
+      month: format(date, "MMMM", { locale: fr }),
+      year: format(date, "yyyy", { locale: fr }),
+    };
+  };
+
+  const getPresenterName = (presenter: EventWithPresenter["presenter"]) => {
+    if (!presenter) return "Intervenant à confirmer";
+    const firstName = presenter.first_name || "";
+    const lastName = presenter.last_name || "";
+    return `${firstName} ${lastName}`.trim() || "Intervenant";
+  };
+
   return (
     <section id="calendar" className="section-padding bg-muted/30">
       <div className="editorial-container">
@@ -65,52 +56,84 @@ const EventCalendar = () => {
         </motion.div>
 
         <div className="space-y-1">
-          {upcomingEvents.map((event, index) => (
-            <motion.article
-              key={event.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-            >
-              <Link
-                to={`/rencontre/${event.id}`}
-                className="group block py-8 md:py-10 border-t border-border hover:bg-background/50 transition-colors"
-              >
+          {loading ? (
+            Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="py-8 md:py-10 border-t border-border">
                 <div className="grid grid-cols-12 gap-4 md:gap-8 items-start">
-                  {/* Date */}
                   <div className="col-span-3 md:col-span-2">
-                    <span className="font-serif text-4xl md:text-5xl text-foreground leading-none">
-                      {event.date}
-                    </span>
-                    <p className="font-sans text-sm text-muted-foreground mt-1">
-                      {event.month}
-                    </p>
+                    <Skeleton className="h-12 w-16" />
+                    <Skeleton className="h-4 w-20 mt-2" />
                   </div>
-
-                  {/* Content */}
                   <div className="col-span-9 md:col-span-7">
-                    <p className="font-sans text-xs tracking-wide uppercase text-ochre mb-2">
-                      {event.theme}
-                    </p>
-                    <h3 className="font-serif text-xl md:text-2xl text-foreground group-hover:text-primary transition-colors mb-2">
-                      {event.title}
-                    </h3>
-                    <p className="font-sans text-sm text-muted-foreground">
-                      Une présentation par {event.presenter}
-                    </p>
+                    <Skeleton className="h-4 w-32 mb-2" />
+                    <Skeleton className="h-8 w-full mb-2" />
+                    <Skeleton className="h-4 w-48" />
                   </div>
-
-                  {/* Location */}
-                  <div className="col-span-12 md:col-span-3 md:text-right">
-                    <p className="font-sans text-sm text-muted-foreground">
-                      {event.location}
-                    </p>
+                  <div className="col-span-12 md:col-span-3">
+                    <Skeleton className="h-4 w-24 ml-auto" />
                   </div>
                 </div>
-              </Link>
-            </motion.article>
-          ))}
+              </div>
+            ))
+          ) : events.length === 0 ? (
+            <div className="py-12 text-center">
+              <p className="text-muted-foreground">Aucune rencontre à venir pour le moment.</p>
+            </div>
+          ) : (
+            events.map((event, index) => {
+              const dateInfo = formatEventDate(event.event_date);
+              return (
+                <motion.article
+                  key={event.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                >
+                  <Link
+                    to={`/rencontre/${event.id}`}
+                    className="group block py-8 md:py-10 border-t border-border hover:bg-background/50 transition-colors"
+                  >
+                    <div className="grid grid-cols-12 gap-4 md:gap-8 items-start">
+                      {/* Date */}
+                      <div className="col-span-3 md:col-span-2">
+                        <span className="font-serif text-4xl md:text-5xl text-foreground leading-none">
+                          {dateInfo.day}
+                        </span>
+                        <p className="font-sans text-sm text-muted-foreground mt-1 capitalize">
+                          {dateInfo.month}
+                        </p>
+                      </div>
+
+                      {/* Content */}
+                      <div className="col-span-9 md:col-span-7">
+                        {event.topic && (
+                          <p className="font-sans text-xs tracking-wide uppercase text-ochre mb-2">
+                            {event.topic}
+                          </p>
+                        )}
+                        <h3 className="font-serif text-xl md:text-2xl text-foreground group-hover:text-primary transition-colors mb-2">
+                          {event.title}
+                        </h3>
+                        <p className="font-sans text-sm text-muted-foreground">
+                          Une présentation par {getPresenterName(event.presenter)}
+                        </p>
+                      </div>
+
+                      {/* Location */}
+                      <div className="col-span-12 md:col-span-3 md:text-right">
+                        {event.location && (
+                          <p className="font-sans text-sm text-muted-foreground">
+                            {event.location}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                </motion.article>
+              );
+            })
+          )}
         </div>
 
         <motion.div

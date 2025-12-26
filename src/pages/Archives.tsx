@@ -1,77 +1,51 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { getPastEvents, EventWithPresenter } from "@/services/events";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { Skeleton } from "@/components/ui/skeleton";
 
-interface ArchivedEvent {
-  id: string;
-  date: string;
-  year: string;
-  title: string;
-  presenter: string;
-  theme: string;
+interface GroupedEvents {
+  [year: string]: EventWithPresenter[];
 }
 
-const archivedEvents: ArchivedEvent[] = [
-  {
-    id: "archive-1",
-    date: "12 Novembre",
-    year: "2024",
-    title: "L'art de la fermentation",
-    presenter: "Thomas Bernard",
-    theme: "Gastronomie & Culture",
-  },
-  {
-    id: "archive-2",
-    date: "24 Octobre",
-    year: "2024",
-    title: "Photographie et mémoire urbaine",
-    presenter: "Catherine Leroy",
-    theme: "Art & Société",
-  },
-  {
-    id: "archive-3",
-    date: "05 Septembre",
-    year: "2024",
-    title: "Le jardin comme refuge",
-    presenter: "Antoine Mercier",
-    theme: "Écologie & Bien-être",
-  },
-  {
-    id: "archive-4",
-    date: "18 Juin",
-    year: "2024",
-    title: "L'économie du lien",
-    presenter: "Isabelle Fontaine",
-    theme: "Société & Économie",
-  },
-  {
-    id: "archive-5",
-    date: "02 Mai",
-    year: "2024",
-    title: "Habiter autrement",
-    presenter: "Philippe Martin",
-    theme: "Architecture & Urbanisme",
-  },
-  {
-    id: "archive-6",
-    date: "14 Mars",
-    year: "2024",
-    title: "La lenteur comme philosophie",
-    presenter: "Hélène Dubois",
-    theme: "Philosophie & Vie",
-  },
-];
-
-const groupedByYear = archivedEvents.reduce((acc, event) => {
-  if (!acc[event.year]) {
-    acc[event.year] = [];
-  }
-  acc[event.year].push(event);
-  return acc;
-}, {} as Record<string, ArchivedEvent[]>);
-
 const Archives = () => {
+  const [groupedByYear, setGroupedByYear] = useState<GroupedEvents>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      const { data, error } = await getPastEvents();
+      if (data && !error) {
+        const grouped = data.reduce((acc, event) => {
+          const year = format(new Date(event.event_date), "yyyy");
+          if (!acc[year]) {
+            acc[year] = [];
+          }
+          acc[year].push(event);
+          return acc;
+        }, {} as GroupedEvents);
+        setGroupedByYear(grouped);
+      }
+      setLoading(false);
+    };
+    fetchEvents();
+  }, []);
+
+  const formatEventDate = (dateString: string) => {
+    return format(new Date(dateString), "dd MMMM", { locale: fr });
+  };
+
+  const getPresenterName = (presenter: EventWithPresenter["presenter"]) => {
+    if (!presenter) return "Intervenant";
+    const firstName = presenter.first_name || "";
+    const lastName = presenter.last_name || "";
+    return `${firstName} ${lastName}`.trim() || "Intervenant";
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -95,57 +69,89 @@ const Archives = () => {
             </p>
           </motion.div>
 
-          {Object.entries(groupedByYear)
-            .sort(([a], [b]) => Number(b) - Number(a))
-            .map(([year, events], yearIndex) => (
-              <motion.div
-                key={year}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: yearIndex * 0.1 }}
-                className="mb-16"
-              >
-                <h2 className="font-serif text-4xl text-foreground/20 mb-8">
-                  {year}
-                </h2>
-                <div className="space-y-1">
-                  {events.map((event, index) => (
-                    <motion.article
-                      key={event.id}
-                      initial={{ opacity: 0 }}
-                      whileInView={{ opacity: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.4, delay: index * 0.05 }}
-                    >
-                      <Link
-                        to={`/rencontre/${event.id}`}
-                        className="group block py-6 border-t border-border hover:bg-muted/30 transition-colors"
-                      >
+          {loading ? (
+            <div className="space-y-16">
+              {Array.from({ length: 2 }).map((_, yearIndex) => (
+                <div key={yearIndex} className="mb-16">
+                  <Skeleton className="h-10 w-24 mb-8" />
+                  <div className="space-y-1">
+                    {Array.from({ length: 3 }).map((_, eventIndex) => (
+                      <div key={eventIndex} className="py-6 border-t border-border">
                         <div className="grid grid-cols-12 gap-4 items-start">
                           <div className="col-span-3 md:col-span-2">
-                            <p className="font-sans text-sm text-muted-foreground">
-                              {event.date}
-                            </p>
+                            <Skeleton className="h-4 w-20" />
                           </div>
                           <div className="col-span-9 md:col-span-7">
-                            <p className="font-sans text-xs tracking-wide uppercase text-ochre mb-1">
-                              {event.theme}
-                            </p>
-                            <h3 className="font-serif text-lg text-foreground group-hover:text-primary transition-colors">
-                              {event.title}
-                            </h3>
-                            <p className="font-sans text-sm text-muted-foreground mt-1">
-                              {event.presenter}
-                            </p>
+                            <Skeleton className="h-3 w-32 mb-2" />
+                            <Skeleton className="h-6 w-full mb-2" />
+                            <Skeleton className="h-4 w-40" />
                           </div>
                         </div>
-                      </Link>
-                    </motion.article>
-                  ))}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </motion.div>
-            ))}
+              ))}
+            </div>
+          ) : Object.keys(groupedByYear).length === 0 ? (
+            <div className="py-12 text-center">
+              <p className="text-muted-foreground">Aucune rencontre passée pour le moment.</p>
+            </div>
+          ) : (
+            Object.entries(groupedByYear)
+              .sort(([a], [b]) => Number(b) - Number(a))
+              .map(([year, events], yearIndex) => (
+                <motion.div
+                  key={year}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: yearIndex * 0.1 }}
+                  className="mb-16"
+                >
+                  <h2 className="font-serif text-4xl text-foreground/20 mb-8">
+                    {year}
+                  </h2>
+                  <div className="space-y-1">
+                    {events.map((event, index) => (
+                      <motion.article
+                        key={event.id}
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.4, delay: index * 0.05 }}
+                      >
+                        <Link
+                          to={`/rencontre/${event.id}`}
+                          className="group block py-6 border-t border-border hover:bg-muted/30 transition-colors"
+                        >
+                          <div className="grid grid-cols-12 gap-4 items-start">
+                            <div className="col-span-3 md:col-span-2">
+                              <p className="font-sans text-sm text-muted-foreground capitalize">
+                                {formatEventDate(event.event_date)}
+                              </p>
+                            </div>
+                            <div className="col-span-9 md:col-span-7">
+                              {event.topic && (
+                                <p className="font-sans text-xs tracking-wide uppercase text-ochre mb-1">
+                                  {event.topic}
+                                </p>
+                              )}
+                              <h3 className="font-serif text-lg text-foreground group-hover:text-primary transition-colors">
+                                {event.title}
+                              </h3>
+                              <p className="font-sans text-sm text-muted-foreground mt-1">
+                                {getPresenterName(event.presenter)}
+                              </p>
+                            </div>
+                          </div>
+                        </Link>
+                      </motion.article>
+                    ))}
+                  </div>
+                </motion.div>
+              ))
+          )}
         </section>
       </main>
       <Footer />
