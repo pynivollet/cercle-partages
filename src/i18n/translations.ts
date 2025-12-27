@@ -37,6 +37,9 @@ export const translations = {
       loginSuccess: "Connexion réussie",
       logoutSuccess: "Déconnexion réussie",
       error: "Une erreur est survenue",
+      emailConfirmationTitle: "Vérifiez votre boîte mail",
+      emailConfirmationMessage: "Un email de confirmation a été envoyé à votre adresse email. Cliquez sur le lien dans l'email pour finaliser la création de votre compte.",
+      emailConfirmationHint: "Si vous ne trouvez pas l'email, vérifiez votre dossier spam.",
     },
     // Hero
     hero: {
@@ -234,6 +237,9 @@ export const translations = {
       loginSuccess: "Login successful",
       logoutSuccess: "Logged out successfully",
       error: "An error occurred",
+      emailConfirmationTitle: "Check your inbox",
+      emailConfirmationMessage: "A confirmation email has been sent to your email address. Click the link in the email to finalize your account creation.",
+      emailConfirmationHint: "If you can't find the email, check your spam folder.",
     },
     // Hero
     hero: {
