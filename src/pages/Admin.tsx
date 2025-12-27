@@ -133,9 +133,13 @@ const Admin = () => {
       if (formData.presenterIds.length > 0) {
         await setEventPresenters(data.id, formData.presenterIds);
       }
-      toast.success(t.common.save);
+      toast.success("Événement créé ! Vous pouvez maintenant ajouter des documents PDF.");
       setEvents([data, ...events]);
       setIsCreateEventOpen(false);
+      // Open edit dialog to allow adding PDFs
+      setEditingEvent(data);
+      setEditingEventPresenterIds(formData.presenterIds);
+      setIsEditEventOpen(true);
     }
   };
 
