@@ -101,12 +101,14 @@ export const getEventById = async (id: string, userId?: string): Promise<{ data:
     return { data: null, error };
   }
 
-  // Get registration count
-  const { count } = await supabase
+  // Get total attendee count (sum of attendee_count for confirmed registrations)
+  const { data: registrations } = await supabase
     .from("event_registrations")
-    .select("*", { count: "exact", head: true })
+    .select("attendee_count")
     .eq("event_id", id)
     .eq("status", "confirmed");
+
+  const totalAttendees = registrations?.reduce((sum, reg) => sum + (reg.attendee_count || 1), 0) ?? 0;
 
   // Get user's registration if logged in
   let userRegistration = null;
@@ -124,7 +126,7 @@ export const getEventById = async (id: string, userId?: string): Promise<{ data:
   return {
     data: {
       ...event,
-      registrations_count: count ?? 0,
+      registrations_count: totalAttendees,
       user_registration: userRegistration,
     },
     error: null,
@@ -161,7 +163,39 @@ export const updateEvent = async (id: string, updates: EventUpdate): Promise<{ d
   return { data, error };
 };
 
-export const registerForEvent = async (eventId: string, userId: string, attendeeCount: number = 1): Promise<{ data: EventRegistration | null; error: Error | null }> => {
+export const registerForEvent = async (eventId: string, userId: string, attendeeCount: number = 1): Promise<{ data: EventRegistration | null; error: Error | null; capacityError?: boolean }> => {
+  // First, check current capacity
+  const { data: event } = await supabase
+    .from("events")
+    .select("participant_limit")
+    .eq("id", eventId)
+    .single();
+
+  if (event?.participant_limit) {
+    // Get current total attendees (excluding cancelled and user's own existing registration)
+    const { data: registrations } = await supabase
+      .from("event_registrations")
+      .select("attendee_count, user_id")
+      .eq("event_id", eventId)
+      .eq("status", "confirmed");
+
+    const currentTotal = registrations?.reduce((sum, reg) => {
+      // Don't count user's own existing registration (they might be updating)
+      if (reg.user_id === userId) return sum;
+      return sum + (reg.attendee_count || 1);
+    }, 0) ?? 0;
+
+    const remainingCapacity = event.participant_limit - currentTotal;
+
+    if (attendeeCount > remainingCapacity) {
+      return { 
+        data: null, 
+        error: new Error(`Capacité insuffisante. Il reste ${remainingCapacity} place${remainingCapacity > 1 ? 's' : ''}.`),
+        capacityError: true
+      };
+    }
+  }
+
   // Check if a registration already exists (cancelled or other)
   const { data: existing } = await supabase
     .from("event_registrations")
