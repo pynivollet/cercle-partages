@@ -26,9 +26,10 @@ import { getAllEvents, createEvent, updateEvent } from "@/services/events";
 import { getPresenters, getAllProfiles } from "@/services/profiles";
 import { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { Copy, Plus } from "lucide-react";
+import { Copy, Plus, FileText } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import PresenterManagement from "@/components/admin/PresenterManagement";
+import EventDocuments from "@/components/admin/EventDocuments";
 
 type Invitation = Database["public"]["Tables"]["invitations"]["Row"];
 type Event = Database["public"]["Tables"]["events"]["Row"];
@@ -46,6 +47,7 @@ const Admin = () => {
   const [presenters, setPresenters] = useState<Profile[]>([]);
   const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
 
   // Invitation form state
   const [newInviteEmail, setNewInviteEmail] = useState("");
@@ -512,28 +514,47 @@ const Admin = () => {
                   {events.map((event) => (
                     <div
                       key={event.id}
-                      className="flex items-center justify-between py-4 px-4 border border-border bg-muted/30"
+                      className="border border-border bg-muted/30"
                     >
-                      <div className="flex-1">
-                        <p className="font-serif text-lg">{event.title}</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {formatDate(event.event_date)} • {event.location || "Lieu à définir"}
-                        </p>
+                      <div className="flex items-center justify-between py-4 px-4">
+                        <div className="flex-1">
+                          <p className="font-serif text-lg">{event.title}</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {formatDate(event.event_date)} • {event.location || "Lieu à définir"}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setExpandedEventId(
+                              expandedEventId === event.id ? null : event.id
+                            )}
+                          >
+                            <FileText className="w-4 h-4 mr-1" />
+                            PDF
+                          </Button>
+                          <Select
+                            value={event.status}
+                            onValueChange={(v) => handleStatusChange(event.id, v as EventStatus)}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="draft">{t.admin.draft}</SelectItem>
+                              <SelectItem value="published">{t.admin.published}</SelectItem>
+                              <SelectItem value="cancelled">{t.admin.cancelled}</SelectItem>
+                              <SelectItem value="completed">{t.admin.completed}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                      <Select
-                        value={event.status}
-                        onValueChange={(v) => handleStatusChange(event.id, v as EventStatus)}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="draft">{t.admin.draft}</SelectItem>
-                          <SelectItem value="published">{t.admin.published}</SelectItem>
-                          <SelectItem value="cancelled">{t.admin.cancelled}</SelectItem>
-                          <SelectItem value="completed">{t.admin.completed}</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {expandedEventId === event.id && user && (
+                        <div className="px-4 pb-4 border-t border-border pt-4">
+                          <EventDocuments eventId={event.id} userId={user.id} />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
