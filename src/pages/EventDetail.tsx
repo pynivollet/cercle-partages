@@ -12,15 +12,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
-import { FileText, Home } from "lucide-react";
+import { FileText } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -32,7 +25,6 @@ const EventDetail = () => {
   const [presenters, setPresenters] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
-  const [attendeeCount, setAttendeeCount] = useState<number>(1);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -69,11 +61,11 @@ const EventDetail = () => {
     if (!event) return;
 
     setRegistering(true);
-    const { error } = await registerForEvent(event.id, user.id, attendeeCount);
+    const { error } = await registerForEvent(event.id, user.id);
     if (error) {
       toast.error("Erreur lors de l'inscription");
     } else {
-      toast.success(`Inscription confirmée pour ${attendeeCount} personne${attendeeCount > 1 ? 's' : ''} !`);
+      toast.success("Inscription confirmée !");
       // Refresh event data
       const { data } = await getEventById(event.id, user.id);
       if (data) setEvent(data);
@@ -270,54 +262,25 @@ const EventDetail = () => {
                 {!isPastEvent && (
                   <>
                     {isRegistered ? (
-                      <div className="space-y-3">
-                        <p className="text-sm text-muted-foreground text-center">
-                          Inscrit pour {event.user_registration?.attendee_count || 1} personne{(event.user_registration?.attendee_count || 1) > 1 ? 's' : ''}
-                        </p>
-                        <Button 
-                          variant="outline" 
-                          size="lg" 
-                          className="w-full"
-                          onClick={handleCancelRegistration}
-                          disabled={registering}
-                        >
-                          {registering ? "Annulation..." : "Annuler mon inscription"}
-                        </Button>
-                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="lg" 
+                        className="w-full"
+                        onClick={handleCancelRegistration}
+                        disabled={registering}
+                      >
+                        {registering ? "Annulation..." : "Annuler mon inscription"}
+                      </Button>
                     ) : (
-                      <div className="space-y-4">
-                        {/* Attendee count selector */}
-                        <div className="space-y-2">
-                          <label className="text-sm text-muted-foreground flex items-center gap-2">
-                            <Home className="w-4 h-4" />
-                            Nombre de personnes
-                          </label>
-                          <Select
-                            value={attendeeCount.toString()}
-                            onValueChange={(value) => setAttendeeCount(parseInt(value))}
-                          >
-                            <SelectTrigger className="w-full bg-background">
-                              <SelectValue placeholder="Sélectionner" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-background">
-                              {[1, 2, 3, 4, 5, 6].map((num) => (
-                                <SelectItem key={num} value={num.toString()}>
-                                  {num} personne{num > 1 ? 's' : ''}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <Button 
-                          variant="nightBlue" 
-                          size="lg" 
-                          className="w-full"
-                          onClick={handleRegister}
-                          disabled={registering}
-                        >
-                          {registering ? "Inscription..." : "S'inscrire à la rencontre"}
-                        </Button>
-                      </div>
+                      <Button 
+                        variant="nightBlue" 
+                        size="lg" 
+                        className="w-full"
+                        onClick={handleRegister}
+                        disabled={registering}
+                      >
+                        {registering ? "Inscription..." : "S'inscrire à la rencontre"}
+                      </Button>
                     )}
                     <p className="text-xs text-muted-foreground text-center">
                       {event.participant_limit 
