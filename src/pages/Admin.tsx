@@ -26,17 +26,16 @@ import { getAllEvents, createEvent, updateEvent } from "@/services/events";
 import { getPresenters, getAllProfiles } from "@/services/profiles";
 import { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { Copy, Plus, FileText } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
+import { Copy, Plus, FileText, Pencil } from "lucide-react";
 import PresenterManagement from "@/components/admin/PresenterManagement";
 import EventDocuments from "@/components/admin/EventDocuments";
+import EventForm, { EventFormData, eventToFormData } from "@/components/admin/EventForm";
 
 type Invitation = Database["public"]["Tables"]["invitations"]["Row"];
 type Event = Database["public"]["Tables"]["events"]["Row"];
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
 type EventStatus = Database["public"]["Enums"]["event_status"];
-type EventCategory = Database["public"]["Enums"]["event_category"];
 
 const Admin = () => {
   const { t } = useLanguage();
@@ -54,18 +53,10 @@ const Admin = () => {
   const [newInviteRole, setNewInviteRole] = useState<AppRole>("participant");
   const [isCreateInviteOpen, setIsCreateInviteOpen] = useState(false);
 
-  // Event form state
+  // Event dialog state
   const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
-  const [eventTitle, setEventTitle] = useState("");
-  const [eventTopic, setEventTopic] = useState("");
-  const [eventDescription, setEventDescription] = useState("");
-  const [eventDate, setEventDate] = useState("");
-  const [eventTime, setEventTime] = useState("19:30");
-  const [eventLocation, setEventLocation] = useState("");
-  const [eventLimit, setEventLimit] = useState("");
-  const [eventPresenterId, setEventPresenterId] = useState("");
-  const [eventStatus, setEventStatus] = useState<EventStatus>("draft");
-  const [eventCategory, setEventCategory] = useState<EventCategory | "">("");
+  const [isEditEventOpen, setIsEditEventOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -115,22 +106,22 @@ const Admin = () => {
     toast.success(t.admin.linkCopied);
   };
 
-  const handleCreateEvent = async () => {
+  const handleCreateEvent = async (formData: EventFormData) => {
     if (!user) return;
     
-    const eventDateTime = new Date(`${eventDate}T${eventTime}`);
+    const eventDateTime = new Date(`${formData.date}T${formData.time}`);
     
     const { data, error } = await createEvent({
-      title: eventTitle,
-      topic: eventTopic || null,
-      description: eventDescription || null,
+      title: formData.title,
+      topic: formData.topic || null,
+      description: formData.description || null,
       event_date: eventDateTime.toISOString(),
-      location: eventLocation || null,
-      participant_limit: eventLimit ? parseInt(eventLimit) : null,
-      presenter_id: eventPresenterId || null,
-      status: eventStatus,
+      location: formData.location || null,
+      participant_limit: formData.participantLimit ? parseInt(formData.participantLimit) : null,
+      presenter_id: formData.presenterId || null,
+      status: formData.status,
       created_by: user.id,
-      category: eventCategory || null,
+      category: formData.category || null,
     });
 
     if (error) {
@@ -139,21 +130,39 @@ const Admin = () => {
       toast.success(t.common.save);
       setEvents([data, ...events]);
       setIsCreateEventOpen(false);
-      resetEventForm();
     }
   };
 
-  const resetEventForm = () => {
-    setEventTitle("");
-    setEventTopic("");
-    setEventDescription("");
-    setEventDate("");
-    setEventTime("19:30");
-    setEventLocation("");
-    setEventLimit("");
-    setEventPresenterId("");
-    setEventStatus("draft");
-    setEventCategory("");
+  const handleEditEvent = async (formData: EventFormData) => {
+    if (!editingEvent) return;
+    
+    const eventDateTime = new Date(`${formData.date}T${formData.time}`);
+    
+    const { data, error } = await updateEvent(editingEvent.id, {
+      title: formData.title,
+      topic: formData.topic || null,
+      description: formData.description || null,
+      event_date: eventDateTime.toISOString(),
+      location: formData.location || null,
+      participant_limit: formData.participantLimit ? parseInt(formData.participantLimit) : null,
+      presenter_id: formData.presenterId || null,
+      status: formData.status,
+      category: formData.category || null,
+    });
+
+    if (error) {
+      toast.error(t.auth.error);
+    } else if (data) {
+      toast.success("Événement mis à jour");
+      setEvents(events.map((e) => (e.id === editingEvent.id ? data : e)));
+      setIsEditEventOpen(false);
+      setEditingEvent(null);
+    }
+  };
+
+  const openEditDialog = (event: Event) => {
+    setEditingEvent(event);
+    setIsEditEventOpen(true);
   };
 
   const getCategoryLabel = (category: string | null) => {
@@ -382,126 +391,35 @@ const Admin = () => {
                     <DialogHeader>
                       <DialogTitle>{t.admin.createEvent}</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4 mt-4">
-                      <div className="space-y-2">
-                        <Label>Titre *</Label>
-                        <Input
-                          value={eventTitle}
-                          onChange={(e) => setEventTitle(e.target.value)}
-                          required
+                    <div className="mt-4">
+                      <EventForm
+                        presenters={presenters}
+                        onSubmit={handleCreateEvent}
+                        submitLabel={t.admin.createEvent}
+                      />
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Edit Event Dialog */}
+                <Dialog open={isEditEventOpen} onOpenChange={(open) => {
+                  setIsEditEventOpen(open);
+                  if (!open) setEditingEvent(null);
+                }}>
+                  <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Modifier l'événement</DialogTitle>
+                    </DialogHeader>
+                    <div className="mt-4">
+                      {editingEvent && (
+                        <EventForm
+                          presenters={presenters}
+                          initialData={eventToFormData(editingEvent)}
+                          onSubmit={handleEditEvent}
+                          submitLabel="Enregistrer"
+                          isEdit
                         />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Thème</Label>
-                        <Input
-                          value={eventTopic}
-                          onChange={(e) => setEventTopic(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Description</Label>
-                        <Textarea
-                          value={eventDescription}
-                          onChange={(e) => setEventDescription(e.target.value)}
-                          rows={4}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Date *</Label>
-                          <Input
-                            type="date"
-                            value={eventDate}
-                            onChange={(e) => setEventDate(e.target.value)}
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Heure</Label>
-                          <Input
-                            type="time"
-                            value={eventTime}
-                            onChange={(e) => setEventTime(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Lieu</Label>
-                        <Input
-                          value={eventLocation}
-                          onChange={(e) => setEventLocation(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Limite de participants</Label>
-                        <Input
-                          type="number"
-                          value={eventLimit}
-                          onChange={(e) => setEventLimit(e.target.value)}
-                          min="1"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Présentateur</Label>
-                        <Select
-                          value={eventPresenterId}
-                          onValueChange={setEventPresenterId}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {presenters.map((presenter) => (
-                              <SelectItem key={presenter.id} value={presenter.id}>
-                                {presenter.first_name} {presenter.last_name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>{t.categories.title}</Label>
-                        <Select
-                          value={eventCategory}
-                          onValueChange={(v) => setEventCategory(v as EventCategory)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="geopolitique">{t.categories.geopolitique}</SelectItem>
-                            <SelectItem value="enjeux_climatiques">{t.categories.enjeux_climatiques}</SelectItem>
-                            <SelectItem value="societe_violences">{t.categories.societe_violences}</SelectItem>
-                            <SelectItem value="idees_cultures_humanites">{t.categories.idees_cultures_humanites}</SelectItem>
-                            <SelectItem value="arts_artistes">{t.categories.arts_artistes}</SelectItem>
-                            <SelectItem value="economie_locale">{t.categories.economie_locale}</SelectItem>
-                            <SelectItem value="science_moderne">{t.categories.science_moderne}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Statut</Label>
-                        <Select
-                          value={eventStatus}
-                          onValueChange={(v) => setEventStatus(v as EventStatus)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="draft">{t.admin.draft}</SelectItem>
-                            <SelectItem value="published">{t.admin.published}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button
-                        variant="nightBlue"
-                        className="w-full"
-                        onClick={handleCreateEvent}
-                        disabled={!eventTitle || !eventDate}
-                      >
-                        {t.admin.createEvent}
-                      </Button>
+                      )}
                     </div>
                   </DialogContent>
                 </Dialog>
@@ -524,6 +442,13 @@ const Admin = () => {
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEditDialog(event)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
