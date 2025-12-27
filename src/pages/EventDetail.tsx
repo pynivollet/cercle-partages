@@ -5,6 +5,13 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getEventById, EventWithPresenter, registerForEvent, cancelRegistration } from "@/services/events";
 import { getEventDocuments, EventDocument } from "@/services/eventDocuments";
 import { getEventPresenters, EventPresenter } from "@/services/eventPresenters";
@@ -12,7 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
-import { FileText } from "lucide-react";
+import { FileText, Users } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -25,6 +32,7 @@ const EventDetail = () => {
   const [presenters, setPresenters] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
+  const [attendeeCount, setAttendeeCount] = useState<string>("1");
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -61,7 +69,7 @@ const EventDetail = () => {
     if (!event) return;
 
     setRegistering(true);
-    const { error } = await registerForEvent(event.id, user.id);
+    const { error } = await registerForEvent(event.id, user.id, parseInt(attendeeCount));
     if (error) {
       toast.error("Erreur lors de l'inscription");
     } else {
@@ -262,25 +270,51 @@ const EventDetail = () => {
                 {!isPastEvent && (
                   <>
                     {isRegistered ? (
-                      <Button 
-                        variant="outline" 
-                        size="lg" 
-                        className="w-full"
-                        onClick={handleCancelRegistration}
-                        disabled={registering}
-                      >
-                        {registering ? "Annulation..." : "Annuler mon inscription"}
-                      </Button>
+                      <div className="space-y-4">
+                        <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                          <p className="text-sm text-foreground font-medium flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            Inscrit pour {event.user_registration?.attendee_count || 1} personne{(event.user_registration?.attendee_count || 1) > 1 ? "s" : ""}
+                          </p>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="lg" 
+                          className="w-full"
+                          onClick={handleCancelRegistration}
+                          disabled={registering}
+                        >
+                          {registering ? "Annulation..." : "Annuler mon inscription"}
+                        </Button>
+                      </div>
                     ) : (
-                      <Button 
-                        variant="nightBlue" 
-                        size="lg" 
-                        className="w-full"
-                        onClick={handleRegister}
-                        disabled={registering}
-                      >
-                        {registering ? "Inscription..." : "S'inscrire à la rencontre"}
-                      </Button>
+                      <div className="space-y-4">
+                        {/* Attendee count selector */}
+                        <div className="flex items-center gap-3">
+                          <Users className="w-5 h-5 text-muted-foreground" />
+                          <Select value={attendeeCount} onValueChange={setAttendeeCount}>
+                            <SelectTrigger className="flex-1 bg-background">
+                              <SelectValue placeholder="Nombre de personnes" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background border border-border z-50">
+                              {[1, 2, 3, 4, 5, 6].map((num) => (
+                                <SelectItem key={num} value={num.toString()}>
+                                  {num} personne{num > 1 ? "s" : ""}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button 
+                          variant="nightBlue" 
+                          size="lg" 
+                          className="w-full"
+                          onClick={handleRegister}
+                          disabled={registering}
+                        >
+                          {registering ? "Inscription..." : "S'inscrire à la rencontre"}
+                        </Button>
+                      </div>
                     )}
                     <p className="text-xs text-muted-foreground text-center">
                       {event.participant_limit 
