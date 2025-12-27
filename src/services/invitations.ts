@@ -58,6 +58,31 @@ export const createInvitation = async (
     .select()
     .single();
 
+  // If invitation was created successfully and email is provided, send the invitation email
+  if (data && email) {
+    const invitationLink = generateInvitationLink(data.token);
+    
+    try {
+      const response = await supabase.functions.invoke("send-invitation-email", {
+        body: {
+          email,
+          invitationLink,
+          role,
+        },
+      });
+
+      if (response.error) {
+        console.error("Failed to send invitation email:", response.error);
+        // Don't fail the invitation creation if email fails
+      } else {
+        console.log("Invitation email sent successfully");
+      }
+    } catch (emailError) {
+      console.error("Error sending invitation email:", emailError);
+      // Don't fail the invitation creation if email fails
+    }
+  }
+
   return { data, error };
 };
 
