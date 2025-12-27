@@ -41,6 +41,49 @@ interface InvitationEmailRequest {
   role: string;
 }
 
+// Valid roles enum
+const VALID_ROLES = ["admin", "presenter", "participant"] as const;
+
+// Email validation regex (RFC 5322 simplified)
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// URL validation regex
+const URL_REGEX = /^https?:\/\/.+/;
+
+const validateInput = (data: InvitationEmailRequest): { valid: boolean; error?: string } => {
+  // Validate email
+  if (!data.email || typeof data.email !== "string") {
+    return { valid: false, error: "Email is required" };
+  }
+  if (data.email.length > 255) {
+    return { valid: false, error: "Email must be less than 255 characters" };
+  }
+  if (!EMAIL_REGEX.test(data.email)) {
+    return { valid: false, error: "Invalid email format" };
+  }
+
+  // Validate invitation link
+  if (!data.invitationLink || typeof data.invitationLink !== "string") {
+    return { valid: false, error: "Invitation link is required" };
+  }
+  if (data.invitationLink.length > 2000) {
+    return { valid: false, error: "Invitation link too long" };
+  }
+  if (!URL_REGEX.test(data.invitationLink)) {
+    return { valid: false, error: "Invalid invitation link format" };
+  }
+
+  // Validate role
+  if (!data.role || typeof data.role !== "string") {
+    return { valid: false, error: "Role is required" };
+  }
+  if (!VALID_ROLES.includes(data.role as typeof VALID_ROLES[number])) {
+    return { valid: false, error: "Invalid role" };
+  }
+
+  return { valid: true };
+};
+
 const getRoleName = (role: string): string => {
   switch (role) {
     case "admin":
@@ -62,21 +105,47 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Only allow POST requests
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      {
+        status: 405,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
+  }
+
   try {
-    const { email, invitationLink, role }: InvitationEmailRequest = await req.json();
-
-    console.log(`Sending invitation email to: ${email}, role: ${role}`);
-
-    if (!email || !invitationLink) {
-      console.error("Missing required fields: email or invitationLink");
+    let body: InvitationEmailRequest;
+    try {
+      body = await req.json();
+    } catch {
       return new Response(
-        JSON.stringify({ error: "Email and invitation link are required" }),
+        JSON.stringify({ error: "Invalid JSON body" }),
         {
           status: 400,
           headers: { "Content-Type": "application/json", ...corsHeaders },
         }
       );
     }
+
+    // Validate input
+    const validation = validateInput(body);
+    if (!validation.valid) {
+      console.error("Validation failed:", validation.error);
+      return new Response(
+        JSON.stringify({ error: validation.error }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    const { email, invitationLink, role } = body;
+
+    console.log(`Sending invitation email to: ${email}, role: ${role}`);
 
     const roleName = getRoleName(role);
 
