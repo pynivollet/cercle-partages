@@ -52,6 +52,45 @@ export type Database = {
           },
         ]
       }
+      event_presenters: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          event_id: string
+          id: string
+          presenter_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          event_id: string
+          id?: string
+          presenter_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          event_id?: string
+          id?: string
+          presenter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_presenters_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_presenters_presenter_id_fkey"
+            columns: ["presenter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_registrations: {
         Row: {
           event_id: string
