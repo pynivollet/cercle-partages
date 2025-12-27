@@ -113,10 +113,10 @@ const PresenterProfile = () => {
         {/* Breadcrumb */}
         <div className="editorial-container mb-8">
           <Link
-            to="/"
+            to="/intervenants"
             className="font-sans text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            ← Retour
+            ← Retour aux intervenants
           </Link>
         </div>
 

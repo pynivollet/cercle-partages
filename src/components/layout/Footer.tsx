@@ -35,14 +35,6 @@ const Footer = () => {
                   Intervenants
                 </Link>
               </li>
-              <li>
-                <Link
-                  to="/connexion"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Espace membre
-                </Link>
-              </li>
             </ul>
           </div>
 
