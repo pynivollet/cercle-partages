@@ -151,10 +151,10 @@ const EventCalendar = () => {
           className="mt-12 pt-8 border-t border-border"
         >
           <Link
-            to="/archives"
+            to="/evenements"
             className="font-sans text-sm tracking-wide text-muted-foreground hover:text-foreground transition-colors"
           >
-            Voir les archives →
+            Voir tous les événements →
           </Link>
         </motion.div>
       </div>
