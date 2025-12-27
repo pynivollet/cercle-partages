@@ -129,7 +129,7 @@ const PresenterProfile = () => {
               transition={{ duration: 0.8 }}
               className="lg:col-span-1"
             >
-              <div className="aspect-[3/4] overflow-hidden sticky top-32 bg-muted">
+              <div className="aspect-square max-w-[280px] overflow-hidden sticky top-32 bg-muted">
                 {profile.avatar_url ? (
                   <img
                     src={profile.avatar_url}
@@ -138,7 +138,7 @@ const PresenterProfile = () => {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                    <span className="text-8xl font-serif">
+                    <span className="text-6xl font-serif">
                       {(profile.first_name?.[0] || "") + (profile.last_name?.[0] || "")}
                     </span>
                   </div>
