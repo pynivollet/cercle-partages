@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import heroImage from "@/assets/hero-background.png";
+import heroImage from "@/assets/hero-gathering.jpg";
+import logoImage from "@/assets/hero-background.png";
 
 const Hero = () => {
   return (
@@ -17,6 +18,14 @@ const Hero = () => {
       {/* Content */}
       <div className="editorial-container relative z-10 pt-32 pb-20">
         <div className="max-w-3xl">
+          <motion.img
+            src={logoImage}
+            alt="Logo Cercle Partages"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="w-48 md:w-64 h-auto mb-6"
+          />
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
