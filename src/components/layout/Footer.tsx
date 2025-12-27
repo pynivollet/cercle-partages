@@ -8,16 +8,12 @@ const Footer = () => {
           {/* Brand */}
           <div>
             <h3 className="font-serif text-2xl mb-4">Cercle Partages</h3>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              L'appétit pour l'altérité
-            </p>
+            <p className="text-muted-foreground text-sm leading-relaxed">L'appétit pour l'altérité</p>
           </div>
 
           {/* Navigation */}
           <div>
-            <h4 className="font-sans text-sm font-medium mb-4 text-foreground">
-              Navigation
-            </h4>
+            <h4 className="font-sans text-sm font-medium mb-4 text-foreground">Navigation</h4>
             <ul className="space-y-3">
               <li>
                 <Link
@@ -40,13 +36,11 @@ const Footer = () => {
 
           {/* Contact */}
           <div>
-            <h4 className="font-sans text-sm font-medium mb-4 text-foreground">
-              Contact
-            </h4>
+            <h4 className="font-sans text-sm font-medium mb-4 text-foreground">Contact</h4>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Le Cercle Partages est accessible sur invitation uniquement.
               <br />
-              Pour toute demande, veuillez contacter un membre du cercle.
+              Pour toute demande, veuillez contacter Bernard Nivollet à bnivollet@gmail.com.
             </p>
           </div>
         </div>
