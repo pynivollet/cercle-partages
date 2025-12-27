@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getInvitations, createInvitation, generateInvitationLink } from "@/services/invitations";
 import { getAllEvents, createEvent, updateEvent } from "@/services/events";
 import { getPresenters, getAllProfiles } from "@/services/profiles";
+import { getEventPresenters, setEventPresenters } from "@/services/eventPresenters";
 import { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { Copy, Plus, FileText, Pencil } from "lucide-react";
@@ -57,6 +58,7 @@ const Admin = () => {
   const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
   const [isEditEventOpen, setIsEditEventOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [editingEventPresenterIds, setEditingEventPresenterIds] = useState<string[]>([]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -118,7 +120,7 @@ const Admin = () => {
       event_date: eventDateTime.toISOString(),
       location: formData.location || null,
       participant_limit: formData.participantLimit ? parseInt(formData.participantLimit) : null,
-      presenter_id: formData.presenterId || null,
+      presenter_id: formData.presenterIds[0] || null, // Keep first presenter in legacy field for compatibility
       status: formData.status,
       created_by: user.id,
       category: formData.category || null,
@@ -127,6 +129,10 @@ const Admin = () => {
     if (error) {
       toast.error(t.auth.error);
     } else if (data) {
+      // Set all presenters in the junction table
+      if (formData.presenterIds.length > 0) {
+        await setEventPresenters(data.id, formData.presenterIds);
+      }
       toast.success(t.common.save);
       setEvents([data, ...events]);
       setIsCreateEventOpen(false);
@@ -145,7 +151,7 @@ const Admin = () => {
       event_date: eventDateTime.toISOString(),
       location: formData.location || null,
       participant_limit: formData.participantLimit ? parseInt(formData.participantLimit) : null,
-      presenter_id: formData.presenterId || null,
+      presenter_id: formData.presenterIds[0] || null, // Keep first presenter in legacy field
       status: formData.status,
       category: formData.category || null,
     });
@@ -153,15 +159,22 @@ const Admin = () => {
     if (error) {
       toast.error(t.auth.error);
     } else if (data) {
+      // Update presenters in the junction table
+      await setEventPresenters(editingEvent.id, formData.presenterIds);
       toast.success("Événement mis à jour");
       setEvents(events.map((e) => (e.id === editingEvent.id ? data : e)));
       setIsEditEventOpen(false);
       setEditingEvent(null);
+      setEditingEventPresenterIds([]);
     }
   };
 
-  const openEditDialog = (event: Event) => {
+  const openEditDialog = async (event: Event) => {
     setEditingEvent(event);
+    // Load current presenters for this event
+    const { data: eventPresenters } = await getEventPresenters(event.id);
+    const presenterIds = eventPresenters?.map(ep => ep.presenter_id) || [];
+    setEditingEventPresenterIds(presenterIds);
     setIsEditEventOpen(true);
   };
 
@@ -404,7 +417,10 @@ const Admin = () => {
                 {/* Edit Event Dialog */}
                 <Dialog open={isEditEventOpen} onOpenChange={(open) => {
                   setIsEditEventOpen(open);
-                  if (!open) setEditingEvent(null);
+                  if (!open) {
+                    setEditingEvent(null);
+                    setEditingEventPresenterIds([]);
+                  }
                 }}>
                   <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
@@ -414,7 +430,7 @@ const Admin = () => {
                       {editingEvent && (
                         <EventForm
                           presenters={presenters}
-                          initialData={eventToFormData(editingEvent)}
+                          initialData={eventToFormData(editingEvent, editingEventPresenterIds)}
                           onSubmit={handleEditEvent}
                           submitLabel="Enregistrer"
                           isEdit

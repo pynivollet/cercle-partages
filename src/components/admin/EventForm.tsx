@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -26,7 +27,7 @@ export interface EventFormData {
   time: string;
   location: string;
   participantLimit: string;
-  presenterId: string;
+  presenterIds: string[];
   status: EventStatus;
   category: EventCategory | "";
 }
@@ -48,7 +49,7 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit }: E
   const [time, setTime] = useState(initialData?.time || "19:30");
   const [location, setLocation] = useState(initialData?.location || "");
   const [participantLimit, setParticipantLimit] = useState(initialData?.participantLimit || "");
-  const [presenterId, setPresenterId] = useState(initialData?.presenterId || "");
+  const [presenterIds, setPresenterIds] = useState<string[]>(initialData?.presenterIds || []);
   const [status, setStatus] = useState<EventStatus>(initialData?.status || "draft");
   const [category, setCategory] = useState<EventCategory | "">(initialData?.category || "");
 
@@ -61,11 +62,19 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit }: E
       setTime(initialData.time);
       setLocation(initialData.location);
       setParticipantLimit(initialData.participantLimit);
-      setPresenterId(initialData.presenterId);
+      setPresenterIds(initialData.presenterIds);
       setStatus(initialData.status);
       setCategory(initialData.category);
     }
   }, [initialData]);
+
+  const handlePresenterToggle = (presenterId: string, checked: boolean) => {
+    if (checked) {
+      setPresenterIds([...presenterIds, presenterId]);
+    } else {
+      setPresenterIds(presenterIds.filter(id => id !== presenterId));
+    }
+  };
 
   const handleSubmit = () => {
     onSubmit({
@@ -76,7 +85,7 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit }: E
       time,
       location,
       participantLimit,
-      presenterId,
+      presenterIds,
       status,
       category,
     });
@@ -143,22 +152,33 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit }: E
         />
       </div>
       <div className="space-y-2">
-        <Label>Présentateur</Label>
-        <Select
-          value={presenterId}
-          onValueChange={setPresenterId}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionner..." />
-          </SelectTrigger>
-          <SelectContent>
-            {presenters.map((presenter) => (
-              <SelectItem key={presenter.id} value={presenter.id}>
-                {presenter.first_name} {presenter.last_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Label>Intervenants</Label>
+        <div className="border border-border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
+          {presenters.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucun intervenant disponible</p>
+          ) : (
+            presenters.map((presenter) => (
+              <div key={presenter.id} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`presenter-${presenter.id}`}
+                  checked={presenterIds.includes(presenter.id)}
+                  onCheckedChange={(checked) => handlePresenterToggle(presenter.id, checked as boolean)}
+                />
+                <label
+                  htmlFor={`presenter-${presenter.id}`}
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                >
+                  {presenter.first_name} {presenter.last_name}
+                </label>
+              </div>
+            ))
+          )}
+        </div>
+        {presenterIds.length > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {presenterIds.length} intervenant{presenterIds.length > 1 ? 's' : ''} sélectionné{presenterIds.length > 1 ? 's' : ''}
+          </p>
+        )}
       </div>
       <div className="space-y-2">
         <Label>{t.categories.title}</Label>
@@ -215,7 +235,7 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit }: E
 
 export default EventForm;
 
-export const eventToFormData = (event: Event): EventFormData => {
+export const eventToFormData = (event: Event, presenterIds: string[] = []): EventFormData => {
   const eventDate = new Date(event.event_date);
   return {
     title: event.title,
@@ -225,7 +245,7 @@ export const eventToFormData = (event: Event): EventFormData => {
     time: eventDate.toTimeString().slice(0, 5),
     location: event.location || "",
     participantLimit: event.participant_limit?.toString() || "",
-    presenterId: event.presenter_id || "",
+    presenterIds,
     status: event.status,
     category: (event.category as EventCategory) || "",
   };

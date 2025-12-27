@@ -7,17 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getEventById, EventWithPresenter, registerForEvent, cancelRegistration } from "@/services/events";
 import { getEventDocuments, EventDocument } from "@/services/eventDocuments";
+import { getEventPresenters, EventPresenter } from "@/services/eventPresenters";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
 import { FileText } from "lucide-react";
+import { Database } from "@/integrations/supabase/types";
+
+type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 const EventDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const [event, setEvent] = useState<EventWithPresenter | null>(null);
   const [documents, setDocuments] = useState<EventDocument[]>([]);
+  const [presenters, setPresenters] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
 
@@ -27,6 +32,16 @@ const EventDetail = () => {
       const { data, error } = await getEventById(id, user?.id);
       if (data && !error) {
         setEvent(data);
+        
+        // Fetch presenters for this event
+        const { data: eventPresenters } = await getEventPresenters(id);
+        if (eventPresenters) {
+          const presenterProfiles = eventPresenters
+            .filter(ep => ep.presenter)
+            .map(ep => ep.presenter as Profile);
+          setPresenters(presenterProfiles);
+        }
+        
         // Fetch documents for authenticated users
         if (user) {
           const { data: docs } = await getEventDocuments(id);
@@ -81,7 +96,7 @@ const EventDetail = () => {
     return format(new Date(dateString), "HH'h'mm", { locale: fr });
   };
 
-  const getPresenterName = (presenter: EventWithPresenter["presenter"]) => {
+  const getPresenterName = (presenter: Profile | EventWithPresenter["presenter"]) => {
     if (!presenter) return "Intervenant à confirmer";
     const firstName = presenter.first_name || "";
     const lastName = presenter.last_name || "";
@@ -279,64 +294,69 @@ const EventDetail = () => {
           </div>
         </section>
 
-        {/* Presenter Section */}
-        {event.presenter && (
+        {/* Presenters Section */}
+        {presenters.length > 0 && (
           <section className="bg-muted/30 section-padding">
             <div className="editorial-container">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8 }}
-                className="grid grid-cols-1 md:grid-cols-3 gap-12 items-center"
-              >
-                {/* Image */}
-                <div className="md:col-span-1">
-                  <div className="aspect-[3/4] overflow-hidden bg-muted">
-                    {event.presenter.avatar_url ? (
-                      <img
-                        src={event.presenter.avatar_url}
-                        alt={getPresenterName(event.presenter)}
-                        className="w-full h-full object-cover grayscale"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                        <span className="text-6xl font-serif">
-                          {(event.presenter.first_name?.[0] || "") + (event.presenter.last_name?.[0] || "")}
-                        </span>
+              <p className="font-sans text-sm tracking-widest uppercase text-muted-foreground mb-8">
+                {presenters.length > 1 ? "Présenté par" : "Présenté par"}
+              </p>
+              <div className="space-y-16">
+                {presenters.map((presenter, index) => (
+                  <motion.div
+                    key={presenter.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, delay: index * 0.1 }}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-12 items-center"
+                  >
+                    {/* Image */}
+                    <div className="md:col-span-1">
+                      <div className="aspect-[3/4] overflow-hidden bg-muted">
+                        {presenter.avatar_url ? (
+                          <img
+                            src={presenter.avatar_url}
+                            alt={getPresenterName(presenter)}
+                            className="w-full h-full object-cover grayscale"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                            <span className="text-6xl font-serif">
+                              {(presenter.first_name?.[0] || "") + (presenter.last_name?.[0] || "")}
+                            </span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
+                    </div>
 
-                {/* Bio */}
-                <div className="md:col-span-2">
-                  <p className="font-sans text-sm tracking-widest uppercase text-muted-foreground mb-4">
-                    Présenté par
-                  </p>
-                  <h2 className="font-serif text-3xl text-foreground mb-2">
-                    {getPresenterName(event.presenter)}
-                  </h2>
-                  {event.presenter.professional_background && (
-                    <p className="font-sans text-ochre mb-6">
-                      {event.presenter.professional_background}
-                    </p>
-                  )}
-                  {event.presenter.bio && (
-                    <p className="text-lg text-muted-foreground leading-relaxed">
-                      {event.presenter.bio}
-                    </p>
-                  )}
-                  <div className="mt-8">
-                    <Link
-                      to={`/presentateur/${event.presenter.id}`}
-                      className="font-sans text-sm text-foreground border-b border-foreground/30 pb-1 hover:border-foreground transition-colors"
-                    >
-                      Découvrir son profil complet
-                    </Link>
-                  </div>
-                </div>
-              </motion.div>
+                    {/* Bio */}
+                    <div className="md:col-span-2">
+                      <h2 className="font-serif text-3xl text-foreground mb-2">
+                        {getPresenterName(presenter)}
+                      </h2>
+                      {presenter.professional_background && (
+                        <p className="font-sans text-ochre mb-6">
+                          {presenter.professional_background}
+                        </p>
+                      )}
+                      {presenter.bio && (
+                        <p className="text-lg text-muted-foreground leading-relaxed">
+                          {presenter.bio}
+                        </p>
+                      )}
+                      <div className="mt-8">
+                        <Link
+                          to={`/presentateur/${presenter.id}`}
+                          className="font-sans text-sm text-foreground border-b border-foreground/30 pb-1 hover:border-foreground transition-colors"
+                        >
+                          Découvrir son profil complet
+                        </Link>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </section>
         )}
