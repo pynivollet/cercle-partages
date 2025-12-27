@@ -161,7 +161,7 @@ export const updateEvent = async (id: string, updates: EventUpdate): Promise<{ d
   return { data, error };
 };
 
-export const registerForEvent = async (eventId: string, userId: string): Promise<{ data: EventRegistration | null; error: Error | null }> => {
+export const registerForEvent = async (eventId: string, userId: string, attendeeCount: number = 1): Promise<{ data: EventRegistration | null; error: Error | null }> => {
   // Check if a registration already exists (cancelled or other)
   const { data: existing } = await supabase
     .from("event_registrations")
@@ -171,10 +171,10 @@ export const registerForEvent = async (eventId: string, userId: string): Promise
     .maybeSingle();
 
   if (existing) {
-    // Reactivate existing registration
+    // Reactivate existing registration with new attendee count
     const { data, error } = await supabase
       .from("event_registrations")
-      .update({ status: "confirmed" })
+      .update({ status: "confirmed", attendee_count: attendeeCount })
       .eq("id", existing.id)
       .select()
       .single();
@@ -187,6 +187,7 @@ export const registerForEvent = async (eventId: string, userId: string): Promise
     .insert({
       event_id: eventId,
       user_id: userId,
+      attendee_count: attendeeCount,
     })
     .select()
     .single();
