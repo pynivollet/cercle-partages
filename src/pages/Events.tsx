@@ -230,7 +230,7 @@ const Events = () => {
                               </span>
                             )}
                           </div>
-                          <h3 className="font-serif text-xl text-foreground group-hover:text-primary transition-colors truncate">
+                          <h3 className="font-serif text-xl text-foreground group-hover:text-primary transition-colors">
                             {event.title}
                           </h3>
                           {event.presenter && (
