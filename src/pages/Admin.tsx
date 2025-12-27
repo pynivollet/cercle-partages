@@ -18,6 +18,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -59,6 +61,8 @@ const Admin = () => {
   const [isEditEventOpen, setIsEditEventOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [editingEventPresenterIds, setEditingEventPresenterIds] = useState<string[]>([]);
+  const [isAddPdfDialogOpen, setIsAddPdfDialogOpen] = useState(false);
+  const [newlyCreatedEvent, setNewlyCreatedEvent] = useState<{ event: Event; presenterIds: string[] } | null>(null);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -133,14 +137,28 @@ const Admin = () => {
       if (formData.presenterIds.length > 0) {
         await setEventPresenters(data.id, formData.presenterIds);
       }
-      toast.success("Événement créé ! Vous pouvez maintenant ajouter des documents PDF.");
+      toast.success("Événement créé !");
       setEvents([data, ...events]);
       setIsCreateEventOpen(false);
-      // Open edit dialog to allow adding PDFs
-      setEditingEvent(data);
-      setEditingEventPresenterIds(formData.presenterIds);
+      // Show dialog asking if user wants to add PDFs
+      setNewlyCreatedEvent({ event: data, presenterIds: formData.presenterIds });
+      setIsAddPdfDialogOpen(true);
+    }
+  };
+
+  const handleAddPdfNow = () => {
+    if (newlyCreatedEvent) {
+      setEditingEvent(newlyCreatedEvent.event);
+      setEditingEventPresenterIds(newlyCreatedEvent.presenterIds);
+      setIsAddPdfDialogOpen(false);
+      setNewlyCreatedEvent(null);
       setIsEditEventOpen(true);
     }
+  };
+
+  const handleAddPdfLater = () => {
+    setIsAddPdfDialogOpen(false);
+    setNewlyCreatedEvent(null);
   };
 
   const handleEditEvent = async (formData: EventFormData) => {
@@ -448,6 +466,31 @@ const Admin = () => {
                         </>
                       )}
                     </div>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Add PDF Confirmation Dialog */}
+                <Dialog open={isAddPdfDialogOpen} onOpenChange={setIsAddPdfDialogOpen}>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Ajouter un document PDF ?</DialogTitle>
+                      <DialogDescription className="pt-2">
+                        Souhaitez-vous ajouter un document PDF à cet événement maintenant ?
+                        <br /><br />
+                        <span className="text-muted-foreground text-sm">
+                          Vous pourrez toujours le faire plus tard en modifiant l'événement.
+                        </span>
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex gap-2 sm:gap-0">
+                      <Button variant="outline" onClick={handleAddPdfLater}>
+                        Plus tard
+                      </Button>
+                      <Button variant="nightBlue" onClick={handleAddPdfNow}>
+                        <FileText className="w-4 h-4 mr-2" />
+                        Ajouter maintenant
+                      </Button>
+                    </DialogFooter>
                   </DialogContent>
                 </Dialog>
               </div>
