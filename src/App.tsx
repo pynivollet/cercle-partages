@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import EventDetail from "./pages/EventDetail";
 import Events from "./pages/Events";
@@ -26,6 +27,7 @@ function App() {
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <ScrollToTop />
               <Routes>
                 <Route path="/connexion" element={<Login />} />
                 <Route
