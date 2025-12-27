@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { ArrowUpDown, Calendar, Filter, MapPin, Tag } from "lucide-react";
+import { ArrowUpDown, Calendar, Filter, List, MapPin, Table2, Tag } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -17,10 +17,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-type SortField = "date" | "category" | "location";
+type SortField = "date" | "category" | "location" | "title" | "presenter" | "status";
 type SortOrder = "asc" | "desc";
 type StatusFilter = "all" | "upcoming" | "past";
+type ViewMode = "list" | "table";
 
 const Events = () => {
   const { t } = useLanguage();
@@ -29,6 +39,7 @@ const Events = () => {
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -45,6 +56,15 @@ const Events = () => {
     if (!category) return "";
     const key = category as keyof typeof t.categories;
     return t.categories[key] || category;
+  };
+
+  const isUpcoming = (dateString: string) => {
+    return new Date(dateString) >= new Date();
+  };
+
+  const getPresenterName = (presenter: EventWithPresenter["presenter"]) => {
+    if (!presenter) return "";
+    return `${presenter.first_name || ""} ${presenter.last_name || ""}`.trim();
   };
 
   const filteredAndSortedEvents = useMemo(() => {
@@ -77,19 +97,47 @@ const Events = () => {
         case "location":
           comparison = (a.location || "").localeCompare(b.location || "");
           break;
+        case "title":
+          comparison = a.title.localeCompare(b.title);
+          break;
+        case "presenter":
+          comparison = getPresenterName(a.presenter).localeCompare(getPresenterName(b.presenter));
+          break;
+        case "status":
+          const aUpcoming = isUpcoming(a.event_date);
+          const bUpcoming = isUpcoming(b.event_date);
+          comparison = aUpcoming === bUpcoming ? 0 : aUpcoming ? -1 : 1;
+          break;
       }
 
       return sortOrder === "asc" ? comparison : -comparison;
     });
   }, [events, sortField, sortOrder, statusFilter]);
 
+  const handleTableSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+
   const toggleSortOrder = () => {
     setSortOrder(sortOrder === "asc" ? "desc" : "asc");
   };
 
-  const isUpcoming = (dateString: string) => {
-    return new Date(dateString) >= new Date();
-  };
+  const SortableHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
+    <TableHead 
+      className="cursor-pointer hover:bg-muted/50 transition-colors select-none"
+      onClick={() => handleTableSort(field)}
+    >
+      <div className="flex items-center gap-1">
+        {children}
+        <ArrowUpDown className={`w-3 h-3 ${sortField === field ? "text-primary" : "text-muted-foreground/50"}`} />
+      </div>
+    </TableHead>
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,71 +160,91 @@ const Events = () => {
             </p>
           </motion.div>
 
-          {/* Filters and Sort Controls */}
+          {/* View Mode Tabs + Filters */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
-            className="flex flex-wrap gap-4 mb-8 items-center"
+            className="flex flex-wrap gap-4 mb-8 items-center justify-between"
           >
-            {/* Status Filter */}
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-muted-foreground" />
-              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous</SelectItem>
-                  <SelectItem value="upcoming">À venir</SelectItem>
-                  <SelectItem value="past">Passés</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex flex-wrap gap-4 items-center">
+              {/* Status Filter */}
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous</SelectItem>
+                    <SelectItem value="upcoming">À venir</SelectItem>
+                    <SelectItem value="past">Passés</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {viewMode === "list" && (
+                <>
+                  <div className="h-6 w-px bg-border hidden sm:block" />
+
+                  {/* Sort (only for list view) */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Trier par :</span>
+                    <Select value={sortField} onValueChange={(value) => setSortField(value as SortField)}>
+                      <SelectTrigger className="w-[160px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="date">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            Date
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="category">
+                          <div className="flex items-center gap-2">
+                            <Tag className="w-4 h-4" />
+                            Catégorie
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="location">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4" />
+                            Lieu
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={toggleSortOrder}
+                    className="flex items-center gap-2"
+                  >
+                    <ArrowUpDown className="w-4 h-4" />
+                    {sortOrder === "asc" ? "Croissant" : "Décroissant"}
+                  </Button>
+                </>
+              )}
             </div>
 
-            <div className="h-6 w-px bg-border hidden sm:block" />
-
-            {/* Sort */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Trier par :</span>
-              <Select value={sortField} onValueChange={(value) => setSortField(value as SortField)}>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="date">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      Date
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="category">
-                    <div className="flex items-center gap-2">
-                      <Tag className="w-4 h-4" />
-                      Catégorie
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="location">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
-                      Lieu
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleSortOrder}
-              className="flex items-center gap-2"
-            >
-              <ArrowUpDown className="w-4 h-4" />
-              {sortOrder === "asc" ? "Croissant" : "Décroissant"}
-            </Button>
+            {/* View Mode Toggle */}
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+              <TabsList>
+                <TabsTrigger value="list" className="flex items-center gap-2">
+                  <List className="w-4 h-4" />
+                  <span className="hidden sm:inline">Liste</span>
+                </TabsTrigger>
+                <TabsTrigger value="table" className="flex items-center gap-2">
+                  <Table2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Tableau</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </motion.div>
 
-          {/* Events List */}
+          {/* Events Content */}
           {loading ? (
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
@@ -187,7 +255,8 @@ const Events = () => {
             <p className="text-muted-foreground text-center py-12">
               {statusFilter === "upcoming" ? "Aucun événement à venir" : statusFilter === "past" ? "Aucun événement passé" : t.calendar.noEvents}
             </p>
-          ) : (
+          ) : viewMode === "list" ? (
+            /* List View */
             <div className="space-y-4">
               {filteredAndSortedEvents.map((event, index) => (
                 <motion.div
@@ -253,6 +322,59 @@ const Events = () => {
                 </motion.div>
               ))}
             </div>
+          ) : (
+            /* Table View */
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="border border-border rounded-lg overflow-hidden"
+            >
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <SortableHeader field="date">Date</SortableHeader>
+                    <SortableHeader field="status">Statut</SortableHeader>
+                    <SortableHeader field="category">Catégorie</SortableHeader>
+                    <SortableHeader field="title">Titre</SortableHeader>
+                    <SortableHeader field="presenter">Intervenant(s)</SortableHeader>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAndSortedEvents.map((event) => (
+                    <TableRow 
+                      key={event.id} 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => window.location.href = `/rencontre/${event.id}`}
+                    >
+                      <TableCell className="font-medium whitespace-nowrap">
+                        {format(new Date(event.event_date), "dd MMM yyyy", { locale: fr })}
+                      </TableCell>
+                      <TableCell>
+                        {isUpcoming(event.event_date) ? (
+                          <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full whitespace-nowrap">
+                            À venir
+                          </span>
+                        ) : (
+                          <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded-full whitespace-nowrap">
+                            Passé
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {getCategoryLabel(event.category)}
+                      </TableCell>
+                      <TableCell className="font-serif">
+                        {event.title}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {getPresenterName(event.presenter)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </motion.div>
           )}
         </div>
       </main>
