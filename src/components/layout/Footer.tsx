@@ -21,18 +21,18 @@ const Footer = () => {
             <ul className="space-y-3">
               <li>
                 <Link
-                  to="/rencontres"
+                  to="/evenements"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Prochaines rencontres
+                  Événements
                 </Link>
               </li>
               <li>
                 <Link
-                  to="/archives"
+                  to="/intervenants"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Archives
+                  Intervenants
                 </Link>
               </li>
               <li>
