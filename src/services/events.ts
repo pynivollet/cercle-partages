@@ -162,6 +162,26 @@ export const updateEvent = async (id: string, updates: EventUpdate): Promise<{ d
 };
 
 export const registerForEvent = async (eventId: string, userId: string): Promise<{ data: EventRegistration | null; error: Error | null }> => {
+  // Check if a registration already exists (cancelled or other)
+  const { data: existing } = await supabase
+    .from("event_registrations")
+    .select("*")
+    .eq("event_id", eventId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (existing) {
+    // Reactivate existing registration
+    const { data, error } = await supabase
+      .from("event_registrations")
+      .update({ status: "confirmed" })
+      .eq("id", existing.id)
+      .select()
+      .single();
+    return { data, error };
+  }
+
+  // Otherwise, create a new registration
   const { data, error } = await supabase
     .from("event_registrations")
     .insert({
