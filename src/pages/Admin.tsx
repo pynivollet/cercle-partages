@@ -115,7 +115,7 @@ const Admin = () => {
     
     const { data, error } = await createEvent({
       title: formData.title,
-      topic: formData.topic || null,
+      topic: formData.category ? null : null,
       description: formData.description || null,
       event_date: eventDateTime.toISOString(),
       location: formData.location || null,
@@ -146,7 +146,7 @@ const Admin = () => {
     
     const { data, error } = await updateEvent(editingEvent.id, {
       title: formData.title,
-      topic: formData.topic || null,
+      topic: null,
       description: formData.description || null,
       event_date: eventDateTime.toISOString(),
       location: formData.location || null,
