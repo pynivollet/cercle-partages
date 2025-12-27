@@ -6,15 +6,18 @@ import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getEventById, EventWithPresenter, registerForEvent, cancelRegistration } from "@/services/events";
+import { getEventDocuments, EventDocument } from "@/services/eventDocuments";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
+import { FileText } from "lucide-react";
 
 const EventDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const [event, setEvent] = useState<EventWithPresenter | null>(null);
+  const [documents, setDocuments] = useState<EventDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
 
@@ -24,6 +27,11 @@ const EventDetail = () => {
       const { data, error } = await getEventById(id, user?.id);
       if (data && !error) {
         setEvent(data);
+        // Fetch documents for authenticated users
+        if (user) {
+          const { data: docs } = await getEventDocuments(id);
+          if (docs) setDocuments(docs);
+        }
       }
       setLoading(false);
     };
@@ -173,6 +181,32 @@ const EventDetail = () => {
                   Présentation suivie d'un échange et d'un repas partagé
                 </p>
               </div>
+
+              {/* Documents section - only for authenticated users */}
+              {user && documents.length > 0 && (
+                <div className="mt-12 pt-8 border-t border-border">
+                  <h3 className="font-serif text-xl mb-4">Documentation</h3>
+                  <div className="space-y-3">
+                    {documents.map((doc) => (
+                      <a
+                        key={doc.id}
+                        href={doc.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-4 bg-muted/50 border border-border hover:bg-muted transition-colors"
+                      >
+                        <FileText className="w-6 h-6 text-destructive shrink-0" />
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{doc.file_name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            PDF • Cliquez pour ouvrir
+                          </p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </motion.div>
 
             {/* Sidebar */}
