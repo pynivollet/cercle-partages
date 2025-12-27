@@ -69,9 +69,13 @@ const EventDetail = () => {
     if (!event) return;
 
     setRegistering(true);
-    const { error } = await registerForEvent(event.id, user.id, parseInt(attendeeCount));
+    const { error, capacityError } = await registerForEvent(event.id, user.id, parseInt(attendeeCount));
     if (error) {
-      toast.error("Erreur lors de l'inscription");
+      if (capacityError) {
+        toast.error(error.message);
+      } else {
+        toast.error("Erreur lors de l'inscription");
+      }
     } else {
       toast.success("Inscription confirmée !");
       // Refresh event data
