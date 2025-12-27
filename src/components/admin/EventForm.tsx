@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -12,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useLanguage } from "@/i18n/LanguageContext";
+import PresenterSelectorDialog from "./PresenterSelectorDialog";
 import { Database } from "@/integrations/supabase/types";
 
 type Event = Database["public"]["Tables"]["events"]["Row"];
@@ -38,9 +38,10 @@ interface EventFormProps {
   onSubmit: (data: EventFormData) => void;
   submitLabel: string;
   isEdit?: boolean;
+  onPresenterCreated?: (presenter: Profile) => void;
 }
 
-const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit }: EventFormProps) => {
+const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onPresenterCreated }: EventFormProps) => {
   const { t } = useLanguage();
   const [title, setTitle] = useState(initialData?.title || "");
   const [topic, setTopic] = useState(initialData?.topic || "");
@@ -68,12 +69,8 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit }: E
     }
   }, [initialData]);
 
-  const handlePresenterToggle = (presenterId: string, checked: boolean) => {
-    if (checked) {
-      setPresenterIds([...presenterIds, presenterId]);
-    } else {
-      setPresenterIds(presenterIds.filter(id => id !== presenterId));
-    }
+  const handleSelectionChange = (ids: string[]) => {
+    setPresenterIds(ids);
   };
 
   const handleSubmit = () => {
@@ -151,35 +148,12 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit }: E
           min="1"
         />
       </div>
-      <div className="space-y-2">
-        <Label>Intervenants</Label>
-        <div className="border border-border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
-          {presenters.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucun intervenant disponible</p>
-          ) : (
-            presenters.map((presenter) => (
-              <div key={presenter.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`presenter-${presenter.id}`}
-                  checked={presenterIds.includes(presenter.id)}
-                  onCheckedChange={(checked) => handlePresenterToggle(presenter.id, checked as boolean)}
-                />
-                <label
-                  htmlFor={`presenter-${presenter.id}`}
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                >
-                  {presenter.first_name} {presenter.last_name}
-                </label>
-              </div>
-            ))
-          )}
-        </div>
-        {presenterIds.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            {presenterIds.length} intervenant{presenterIds.length > 1 ? 's' : ''} sélectionné{presenterIds.length > 1 ? 's' : ''}
-          </p>
-        )}
-      </div>
+      <PresenterSelectorDialog
+        presenters={presenters}
+        selectedIds={presenterIds}
+        onSelectionChange={handleSelectionChange}
+        onPresenterCreated={onPresenterCreated}
+      />
       <div className="space-y-2">
         <Label>{t.categories.title}</Label>
         <Select
