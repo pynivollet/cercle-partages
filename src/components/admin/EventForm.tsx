@@ -21,7 +21,7 @@ type EventCategory = Database["public"]["Enums"]["event_category"];
 
 export interface EventFormData {
   title: string;
-  topic: string;
+  category: EventCategory | "";
   description: string;
   date: string;
   time: string;
@@ -29,7 +29,6 @@ export interface EventFormData {
   participantLimit: string;
   presenterIds: string[];
   status: EventStatus;
-  category: EventCategory | "";
 }
 
 interface EventFormProps {
@@ -44,7 +43,7 @@ interface EventFormProps {
 const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onPresenterCreated }: EventFormProps) => {
   const { t } = useLanguage();
   const [title, setTitle] = useState(initialData?.title || "");
-  const [topic, setTopic] = useState(initialData?.topic || "");
+  const [category, setCategory] = useState<EventCategory | "">(initialData?.category || "");
   const [description, setDescription] = useState(initialData?.description || "");
   const [date, setDate] = useState(initialData?.date || "");
   const [time, setTime] = useState(initialData?.time || "19:30");
@@ -52,12 +51,11 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
   const [participantLimit, setParticipantLimit] = useState(initialData?.participantLimit || "");
   const [presenterIds, setPresenterIds] = useState<string[]>(initialData?.presenterIds || []);
   const [status, setStatus] = useState<EventStatus>(initialData?.status || "draft");
-  const [category, setCategory] = useState<EventCategory | "">(initialData?.category || "");
 
   useEffect(() => {
     if (initialData) {
       setTitle(initialData.title);
-      setTopic(initialData.topic);
+      setCategory(initialData.category);
       setDescription(initialData.description);
       setDate(initialData.date);
       setTime(initialData.time);
@@ -65,7 +63,6 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
       setParticipantLimit(initialData.participantLimit);
       setPresenterIds(initialData.presenterIds);
       setStatus(initialData.status);
-      setCategory(initialData.category);
     }
   }, [initialData]);
 
@@ -76,7 +73,7 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
   const handleSubmit = () => {
     onSubmit({
       title,
-      topic,
+      category,
       description,
       date,
       time,
@@ -84,7 +81,6 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
       participantLimit,
       presenterIds,
       status,
-      category,
     });
   };
 
@@ -99,11 +95,24 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
         />
       </div>
       <div className="space-y-2">
-        <Label>Thème</Label>
-        <Input
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-        />
+        <Label>{t.categories.title}</Label>
+        <Select
+          value={category}
+          onValueChange={(v) => setCategory(v as EventCategory)}
+        >
+          <SelectTrigger className="bg-background">
+            <SelectValue placeholder="Sélectionner une catégorie..." />
+          </SelectTrigger>
+          <SelectContent className="bg-background border border-border z-50">
+            <SelectItem value="geopolitique">{t.categories.geopolitique}</SelectItem>
+            <SelectItem value="enjeux_climatiques">{t.categories.enjeux_climatiques}</SelectItem>
+            <SelectItem value="societe_violences">{t.categories.societe_violences}</SelectItem>
+            <SelectItem value="idees_cultures_humanites">{t.categories.idees_cultures_humanites}</SelectItem>
+            <SelectItem value="arts_artistes">{t.categories.arts_artistes}</SelectItem>
+            <SelectItem value="economie_locale">{t.categories.economie_locale}</SelectItem>
+            <SelectItem value="science_moderne">{t.categories.science_moderne}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div className="space-y-2">
         <Label>Description</Label>
@@ -155,26 +164,6 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
         onPresenterCreated={onPresenterCreated}
       />
       <div className="space-y-2">
-        <Label>{t.categories.title}</Label>
-        <Select
-          value={category}
-          onValueChange={(v) => setCategory(v as EventCategory)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionner..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="geopolitique">{t.categories.geopolitique}</SelectItem>
-            <SelectItem value="enjeux_climatiques">{t.categories.enjeux_climatiques}</SelectItem>
-            <SelectItem value="societe_violences">{t.categories.societe_violences}</SelectItem>
-            <SelectItem value="idees_cultures_humanites">{t.categories.idees_cultures_humanites}</SelectItem>
-            <SelectItem value="arts_artistes">{t.categories.arts_artistes}</SelectItem>
-            <SelectItem value="economie_locale">{t.categories.economie_locale}</SelectItem>
-            <SelectItem value="science_moderne">{t.categories.science_moderne}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-2">
         <Label>Statut</Label>
         <Select
           value={status}
@@ -213,7 +202,7 @@ export const eventToFormData = (event: Event, presenterIds: string[] = []): Even
   const eventDate = new Date(event.event_date);
   return {
     title: event.title,
-    topic: event.topic || "",
+    category: (event.category as EventCategory) || "",
     description: event.description || "",
     date: eventDate.toISOString().split("T")[0],
     time: eventDate.toTimeString().slice(0, 5),
@@ -221,6 +210,5 @@ export const eventToFormData = (event: Event, presenterIds: string[] = []): Even
     participantLimit: event.participant_limit?.toString() || "",
     presenterIds,
     status: event.status,
-    category: (event.category as EventCategory) || "",
   };
 };
