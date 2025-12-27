@@ -409,6 +409,7 @@ const Admin = () => {
                         presenters={presenters}
                         onSubmit={handleCreateEvent}
                         submitLabel={t.admin.createEvent}
+                        onPresenterCreated={(presenter) => setPresenters([...presenters, presenter])}
                       />
                     </div>
                   </DialogContent>
@@ -434,6 +435,7 @@ const Admin = () => {
                           onSubmit={handleEditEvent}
                           submitLabel="Enregistrer"
                           isEdit
+                          onPresenterCreated={(presenter) => setPresenters([...presenters, presenter])}
                         />
                       )}
                     </div>
