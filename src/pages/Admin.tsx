@@ -472,16 +472,6 @@ const Admin = () => {
                           >
                             <Pencil className="w-4 h-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setExpandedEventId(
-                              expandedEventId === event.id ? null : event.id
-                            )}
-                          >
-                            <FileText className="w-4 h-4 mr-1" />
-                            PDF
-                          </Button>
                           <Select
                             value={event.status}
                             onValueChange={(v) => handleStatusChange(event.id, v as EventStatus)}
@@ -498,11 +488,6 @@ const Admin = () => {
                           </Select>
                         </div>
                       </div>
-                      {expandedEventId === event.id && user && (
-                        <div className="px-4 pb-4 border-t border-border pt-4">
-                          <EventDocuments eventId={event.id} userId={user.id} />
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
