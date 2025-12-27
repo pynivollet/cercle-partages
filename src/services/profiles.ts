@@ -104,3 +104,28 @@ export const uploadPresenterAvatar = async (file: File, presenterId: string): Pr
 
   return { url: publicUrl, error: null };
 };
+
+export const deletePresenter = async (presenterId: string): Promise<{ error: Error | null }> => {
+  // First, remove is_presenter flag (soft delete - keeps profile data)
+  const { error } = await supabase
+    .from("profiles")
+    .update({ is_presenter: false })
+    .eq("id", presenterId);
+
+  return { error };
+};
+
+export const hardDeletePresenter = async (presenterId: string): Promise<{ error: Error | null }> => {
+  // Delete avatar from storage if exists
+  await supabase.storage
+    .from('avatars')
+    .remove([`presenters/${presenterId}`]);
+
+  // Delete the profile entirely
+  const { error } = await supabase
+    .from("profiles")
+    .delete()
+    .eq("id", presenterId);
+
+  return { error };
+};

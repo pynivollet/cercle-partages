@@ -12,6 +12,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -21,8 +31,8 @@ import {
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { Plus, Pencil, Upload, User, Calendar } from "lucide-react";
-import { createPresenterProfile, updateProfile, uploadPresenterAvatar } from "@/services/profiles";
+import { Plus, Pencil, Upload, User, Calendar, Trash2 } from "lucide-react";
+import { createPresenterProfile, updateProfile, uploadPresenterAvatar, deletePresenter } from "@/services/profiles";
 import { getPresentationsByPresenter } from "@/services/presentations";
 import { Link } from "react-router-dom";
 
@@ -64,6 +74,10 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
   const [viewingPresentations, setViewingPresentations] = useState<Profile | null>(null);
   const [presentations, setPresentations] = useState<Presentation[]>([]);
   const [loadingPresentations, setLoadingPresentations] = useState(false);
+
+  // Delete presenter state
+  const [presenterToDelete, setPresenterToDelete] = useState<Profile | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
     const file = e.target.files?.[0];
@@ -186,6 +200,23 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
       month: "short",
       year: "numeric",
     });
+  };
+
+  const handleDeletePresenter = async () => {
+    if (!presenterToDelete) return;
+    
+    setIsDeleting(true);
+    const { error } = await deletePresenter(presenterToDelete.id);
+    
+    if (error) {
+      toast.error("Erreur lors de la suppression");
+    } else {
+      toast.success("Intervenant supprimé");
+      onPresentersChange();
+    }
+    
+    setIsDeleting(false);
+    setPresenterToDelete(null);
   };
 
   // Get non-presenter profiles for linking
@@ -424,6 +455,29 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!presenterToDelete} onOpenChange={(open) => !open && setPresenterToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer l'intervenant ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer {presenterToDelete?.first_name} {presenterToDelete?.last_name} de la liste des intervenants ? 
+              Cette action retirera le statut d'intervenant mais conservera le profil.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePresenter}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Suppression..." : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Presenters list */}
       {presenters.length === 0 ? (
         <p className="text-muted-foreground">{t.admin.noPresenters}</p>
@@ -474,6 +528,14 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
                   onClick={() => handleEditPresenter(presenter)}
                 >
                   <Pencil className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPresenterToDelete(presenter)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
             </div>
