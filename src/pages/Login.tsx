@@ -1,10 +1,17 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { validateInvitationToken } from "@/services/invitations";
@@ -52,6 +59,9 @@ const Login = () => {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Email confirmation dialog
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
 
   // Check for invitation token in URL
   useEffect(() => {
@@ -138,8 +148,7 @@ const Login = () => {
       if (error) {
         toast.error(error.message || t.auth.error);
       } else {
-        toast.success(t.auth.accountCreated);
-        navigate("/");
+        setShowEmailConfirmation(true);
       }
     } catch {
       toast.error(t.auth.error);
@@ -420,6 +429,35 @@ const Login = () => {
         <div className="absolute top-0 right-0 w-96 h-96 border border-primary-foreground/10 rounded-full translate-x-1/2 -translate-y-1/2" />
         <div className="absolute bottom-0 left-0 w-64 h-64 border border-primary-foreground/10 rounded-full -translate-x-1/2 translate-y-1/2" />
       </div>
+
+      {/* Email Confirmation Dialog */}
+      <Dialog open={showEmailConfirmation} onOpenChange={setShowEmailConfirmation}>
+        <DialogContent className="max-w-md text-center">
+          <DialogHeader className="items-center">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <Mail className="w-8 h-8 text-primary" />
+            </div>
+            <DialogTitle className="text-xl">{t.auth.emailConfirmationTitle}</DialogTitle>
+            <DialogDescription className="pt-2 text-base">
+              {t.auth.emailConfirmationMessage}
+              <br /><br />
+              <span className="text-muted-foreground text-sm">
+                {t.auth.emailConfirmationHint}
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <Button 
+            variant="nightBlue" 
+            className="mt-4"
+            onClick={() => {
+              setShowEmailConfirmation(false);
+              setIsInvitation(false);
+            }}
+          >
+            {t.common.confirm}
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
