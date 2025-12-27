@@ -427,16 +427,21 @@ const Admin = () => {
                     <DialogHeader>
                       <DialogTitle>Modifier l'événement</DialogTitle>
                     </DialogHeader>
-                    <div className="mt-4">
+                    <div className="mt-4 space-y-6">
                       {editingEvent && (
-                        <EventForm
-                          presenters={presenters}
-                          initialData={eventToFormData(editingEvent, editingEventPresenterIds)}
-                          onSubmit={handleEditEvent}
-                          submitLabel="Enregistrer"
-                          isEdit
-                          onPresenterCreated={(presenter) => setPresenters([...presenters, presenter])}
-                        />
+                        <>
+                          <EventForm
+                            presenters={presenters}
+                            initialData={eventToFormData(editingEvent, editingEventPresenterIds)}
+                            onSubmit={handleEditEvent}
+                            submitLabel="Enregistrer"
+                            isEdit
+                            onPresenterCreated={(presenter) => setPresenters([...presenters, presenter])}
+                          />
+                          <div className="pt-4 border-t border-border">
+                            <EventDocuments eventId={editingEvent.id} userId={user?.id || ""} />
+                          </div>
+                        </>
                       )}
                     </div>
                   </DialogContent>
