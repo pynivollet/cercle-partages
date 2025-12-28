@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Eye, EyeOff, Mail } from "lucide-react";
+import { Eye, EyeOff, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -430,20 +430,16 @@ const Login = () => {
         <div className="absolute bottom-0 left-0 w-64 h-64 border border-primary-foreground/10 rounded-full -translate-x-1/2 translate-y-1/2" />
       </div>
 
-      {/* Email Confirmation Dialog */}
+      {/* Account Created Dialog */}
       <Dialog open={showEmailConfirmation} onOpenChange={setShowEmailConfirmation}>
         <DialogContent className="max-w-md text-center">
           <DialogHeader className="items-center">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <Mail className="w-8 h-8 text-primary" />
+            <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-500" />
             </div>
-            <DialogTitle className="text-xl">{t.auth.emailConfirmationTitle}</DialogTitle>
+            <DialogTitle className="text-xl">{t.auth.accountCreatedTitle}</DialogTitle>
             <DialogDescription className="pt-2 text-base">
-              {t.auth.emailConfirmationMessage}
-              <br /><br />
-              <span className="text-muted-foreground text-sm">
-                {t.auth.emailConfirmationHint}
-              </span>
+              {t.auth.accountCreatedMessage}
             </DialogDescription>
           </DialogHeader>
           <Button 
@@ -454,7 +450,7 @@ const Login = () => {
               setIsInvitation(false);
             }}
           >
-            {t.common.confirm}
+            {t.auth.loginButton}
           </Button>
         </DialogContent>
       </Dialog>
