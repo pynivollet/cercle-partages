@@ -37,14 +37,15 @@ export const translations = {
       loginSuccess: "Connexion réussie",
       logoutSuccess: "Déconnexion réussie",
       error: "Une erreur est survenue",
-      emailConfirmationTitle: "Vérifiez votre boîte mail",
-      emailConfirmationMessage: "Un email de confirmation a été envoyé à votre adresse email. Cliquez sur le lien dans l'email pour finaliser la création de votre compte.",
-      emailConfirmationHint: "Si vous ne trouvez pas l'email, vérifiez votre dossier spam.",
+      emailConfirmationTitle: "Compte creer avec succès",
+      emailConfirmationMessage: "Votre compte a été créé avec succès.",
+      emailConfirmationHint: "Veuillez vous connecter pour accéder à Cercle Partages.",
     },
     // Hero
     hero: {
       slogan: "L'appétit pour l'altérité",
-      description: "Un cercle d'échanges autour de l'architecture, l'écologie, l'art, la culture et la vie professionnelle.",
+      description:
+        "Un cercle d'échanges autour de l'architecture, l'écologie, l'art, la culture et la vie professionnelle.",
     },
     // Calendar
     calendar: {
@@ -80,7 +81,8 @@ export const translations = {
     archives: {
       title: "Archives",
       subtitle: "Rencontres passées",
-      description: "Retrouvez ici l'ensemble des rencontres organisées par le Cercle Partages. Chaque présentation est une invitation à la découverte et à la réflexion.",
+      description:
+        "Retrouvez ici l'ensemble des rencontres organisées par le Cercle Partages. Chaque présentation est une invitation à la découverte et à la réflexion.",
       viewPresentation: "Voir la présentation",
       noPresentations: "Aucune présentation archivée",
     },
@@ -94,7 +96,8 @@ export const translations = {
     // Philosophy
     philosophy: {
       title: "Notre philosophie",
-      description: "Le Cercle Partages réunit des esprits curieux autour de rencontres intimes. Chaque soirée est une invitation à l'écoute, au questionnement, et au plaisir d'être ensemble.",
+      description:
+        "Le Cercle Partages réunit des esprits curieux autour de rencontres intimes. Chaque soirée est une invitation à l'écoute, au questionnement, et au plaisir d'être ensemble.",
       values: {
         exchange: "Échange",
         exchangeDesc: "Un espace de dialogue authentique",
@@ -238,7 +241,8 @@ export const translations = {
       logoutSuccess: "Logged out successfully",
       error: "An error occurred",
       emailConfirmationTitle: "Check your inbox",
-      emailConfirmationMessage: "A confirmation email has been sent to your email address. Click the link in the email to finalize your account creation.",
+      emailConfirmationMessage:
+        "A confirmation email has been sent to your email address. Click the link in the email to finalize your account creation.",
       emailConfirmationHint: "If you can't find the email, check your spam folder.",
     },
     // Hero
@@ -280,7 +284,8 @@ export const translations = {
     archives: {
       title: "Archives",
       subtitle: "Past events",
-      description: "Find here all the events organized by Cercle Partages. Each presentation is an invitation to discovery and reflection.",
+      description:
+        "Find here all the events organized by Cercle Partages. Each presentation is an invitation to discovery and reflection.",
       viewPresentation: "View presentation",
       noPresentations: "No archived presentations",
     },
@@ -294,7 +299,8 @@ export const translations = {
     // Philosophy
     philosophy: {
       title: "Our philosophy",
-      description: "Cercle Partages brings together curious minds around intimate gatherings. Each evening is an invitation to listen, question, and enjoy being together.",
+      description:
+        "Cercle Partages brings together curious minds around intimate gatherings. Each evening is an invitation to listen, question, and enjoy being together.",
       values: {
         exchange: "Exchange",
         exchangeDesc: "A space for authentic dialogue",
