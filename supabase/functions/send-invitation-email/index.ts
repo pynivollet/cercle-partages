@@ -14,7 +14,7 @@ const sendEmail = async (to: string[], subject: string, html: string): Promise<R
       Authorization: `Bearer ${RESEND_API_KEY}`,
     },
     body: JSON.stringify({
-      from: "Cercle Partages <onboarding@resend.dev>",
+      from: "Cercle Partages <contact@cerclepartages.org>",
       to,
       subject,
       html,
