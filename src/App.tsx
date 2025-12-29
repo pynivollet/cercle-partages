@@ -12,6 +12,7 @@ import EventDetail from "./pages/EventDetail";
 import Events from "./pages/Events";
 import Presenters from "./pages/Presenters";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import PresenterProfile from "./pages/PresenterProfile";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -30,6 +31,7 @@ function App() {
               <ScrollToTop />
               <Routes>
                 <Route path="/connexion" element={<Login />} />
+                <Route path="/inscription" element={<Signup />} />
                 <Route
                   path="/"
                   element={
