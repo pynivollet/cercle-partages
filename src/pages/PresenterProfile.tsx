@@ -51,10 +51,12 @@ const PresenterProfile = () => {
   }, [id]);
 
   const getPresenterName = () => {
-    if (!profile) return "";
-    const firstName = profile.first_name || "";
-    const lastName = profile.last_name || "";
-    return `${firstName} ${lastName}`.trim() || "Intervenant";
+    return profile?.full_name || "Intervenant";
+  };
+
+  const getInitials = () => {
+    const name = profile?.full_name || "";
+    return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
   };
 
   const formatPresentationDate = (dateString: string) => {
@@ -139,7 +141,7 @@ const PresenterProfile = () => {
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                     <span className="text-6xl font-serif">
-                      {(profile.first_name?.[0] || "") + (profile.last_name?.[0] || "")}
+                      {getInitials()}
                     </span>
                   </div>
                 )}
@@ -156,14 +158,9 @@ const PresenterProfile = () => {
               <p className="font-sans text-sm tracking-widest uppercase text-muted-foreground mb-4">
                 Intervenant
               </p>
-              <h1 className="text-headline text-foreground mb-2">
+              <h1 className="text-headline text-foreground mb-12">
                 {getPresenterName()}
               </h1>
-              {profile.professional_background && (
-                <p className="font-sans text-xl text-ochre mb-12">
-                  {profile.professional_background}
-                </p>
-              )}
 
               {/* Bio */}
               {profile.bio && (

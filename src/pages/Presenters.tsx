@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { useLanguage } from "@/i18n/LanguageContext";
 import { getPresenters } from "@/services/profiles";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Database } from "@/integrations/supabase/types";
@@ -11,7 +10,6 @@ import { Database } from "@/integrations/supabase/types";
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 const Presenters = () => {
-  const { t } = useLanguage();
   const [presenters, setPresenters] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,6 +23,11 @@ const Presenters = () => {
     };
     fetchPresenters();
   }, []);
+
+  const getInitials = (profile: Profile) => {
+    const name = profile.full_name || "";
+    return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -78,13 +81,12 @@ const Presenters = () => {
                           {presenter.avatar_url ? (
                             <img
                               src={presenter.avatar_url}
-                              alt={`${presenter.first_name} ${presenter.last_name}`}
+                              alt={presenter.full_name || ""}
                               className="w-full h-full object-cover"
                             />
                           ) : (
                             <span className="text-2xl font-serif text-muted-foreground">
-                              {presenter.first_name?.[0]}
-                              {presenter.last_name?.[0]}
+                              {getInitials(presenter)}
                             </span>
                           )}
                         </div>
@@ -92,13 +94,8 @@ const Presenters = () => {
                         {/* Info */}
                         <div className="flex-1 min-w-0">
                           <h3 className="font-serif text-xl text-foreground group-hover:text-primary transition-colors">
-                            {presenter.first_name} {presenter.last_name}
+                            {presenter.full_name || "Sans nom"}
                           </h3>
-                          {presenter.professional_background && (
-                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                              {presenter.professional_background}
-                            </p>
-                          )}
                         </div>
                       </div>
 
