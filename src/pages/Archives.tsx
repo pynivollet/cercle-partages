@@ -41,9 +41,7 @@ const Archives = () => {
 
   const getPresenterName = (presenter: EventWithPresenter["presenter"]) => {
     if (!presenter) return "Intervenant";
-    const firstName = presenter.first_name || "";
-    const lastName = presenter.last_name || "";
-    return `${firstName} ${lastName}`.trim() || "Intervenant";
+    return presenter.full_name || "Intervenant";
   };
 
   return (

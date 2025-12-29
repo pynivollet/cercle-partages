@@ -34,9 +34,7 @@ const EventCalendar = () => {
 
   const getPresenterName = (presenter: EventWithPresenter["presenter"]) => {
     if (!presenter) return "Intervenant à confirmer";
-    const firstName = presenter.first_name || "";
-    const lastName = presenter.last_name || "";
-    return `${firstName} ${lastName}`.trim() || "Intervenant";
+    return presenter.full_name || "Intervenant";
   };
 
   const getCategoryLabel = (category: string | null) => {
