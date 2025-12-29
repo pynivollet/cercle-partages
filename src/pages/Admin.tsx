@@ -23,18 +23,17 @@ import {
 } from "@/components/ui/dialog";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { getInvitations, createInvitation, generateInvitationLink } from "@/services/invitations";
 import { getAllEvents, createEvent, updateEvent } from "@/services/events";
 import { getPresenters, getAllProfiles } from "@/services/profiles";
 import { getEventPresenters, setEventPresenters } from "@/services/eventPresenters";
 import { Database } from "@/integrations/supabase/types";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Copy, Plus, FileText, Pencil } from "lucide-react";
+import { Copy, Plus, FileText, Pencil, Mail } from "lucide-react";
 import PresenterManagement from "@/components/admin/PresenterManagement";
 import EventDocuments from "@/components/admin/EventDocuments";
 import EventForm, { EventFormData, eventToFormData } from "@/components/admin/EventForm";
 
-type Invitation = Database["public"]["Tables"]["invitations"]["Row"];
 type Event = Database["public"]["Tables"]["events"]["Row"];
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -44,17 +43,16 @@ const Admin = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"invitations" | "events" | "presenters">("invitations");
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [presenters, setPresenters] = useState<Profile[]>([]);
   const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
 
   // Invitation form state
   const [newInviteEmail, setNewInviteEmail] = useState("");
   const [newInviteRole, setNewInviteRole] = useState<AppRole>("participant");
   const [isCreateInviteOpen, setIsCreateInviteOpen] = useState(false);
+  const [isInviting, setIsInviting] = useState(false);
 
   // Event dialog state
   const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
@@ -66,14 +64,12 @@ const Admin = () => {
 
   const fetchData = async () => {
     setIsLoading(true);
-    const [invitationsRes, eventsRes, presentersRes, allProfilesRes] = await Promise.all([
-      getInvitations(),
+    const [eventsRes, presentersRes, allProfilesRes] = await Promise.all([
       getAllEvents(),
       getPresenters(),
       getAllProfiles(),
     ]);
     
-    if (invitationsRes.data) setInvitations(invitationsRes.data);
     if (eventsRes.data) setEvents(eventsRes.data);
     if (presentersRes.data) setPresenters(presentersRes.data);
     if (allProfilesRes.data) setAllProfiles(allProfilesRes.data);
@@ -85,31 +81,37 @@ const Admin = () => {
   }, []);
 
   const handleCreateInvitation = async () => {
-    if (!user) return;
-    
-    const { data, error } = await createInvitation(
-      newInviteEmail || null,
-      newInviteRole,
-      user.id
-    );
-
-    if (error) {
-      toast.error(t.auth.error);
-    } else if (data) {
-      toast.success(t.admin.linkCopied);
-      const link = generateInvitationLink(data.token);
-      navigator.clipboard.writeText(link);
-      setInvitations([data, ...invitations]);
-      setIsCreateInviteOpen(false);
-      setNewInviteEmail("");
-      setNewInviteRole("participant");
+    if (!newInviteEmail) {
+      toast.error("Veuillez entrer une adresse email");
+      return;
     }
-  };
+    
+    setIsInviting(true);
+    
+    try {
+      // Use Supabase Admin API via Edge Function to invite user
+      const { data, error } = await supabase.functions.invoke("invite-user", {
+        body: {
+          email: newInviteEmail,
+          role: newInviteRole,
+        },
+      });
 
-  const handleCopyLink = (token: string) => {
-    const link = generateInvitationLink(token);
-    navigator.clipboard.writeText(link);
-    toast.success(t.admin.linkCopied);
+      if (error) {
+        console.error("Invitation error:", error);
+        toast.error("Erreur lors de l'envoi de l'invitation");
+      } else {
+        toast.success(`Invitation envoyée à ${newInviteEmail}`);
+        setIsCreateInviteOpen(false);
+        setNewInviteEmail("");
+        setNewInviteRole("participant");
+      }
+    } catch (err) {
+      console.error("Invitation error:", err);
+      toast.error("Erreur lors de l'envoi de l'invitation");
+    } finally {
+      setIsInviting(false);
+    }
   };
 
   const handleCreateEvent = async (formData: EventFormData) => {
@@ -124,7 +126,7 @@ const Admin = () => {
       event_date: eventDateTime.toISOString(),
       location: formData.location || null,
       participant_limit: formData.participantLimit ? parseInt(formData.participantLimit) : null,
-      presenter_id: formData.presenterIds[0] || null, // Keep first presenter in legacy field for compatibility
+      presenter_id: formData.presenterIds[0] || null,
       status: formData.status,
       created_by: user.id,
       category: formData.category || null,
@@ -133,14 +135,12 @@ const Admin = () => {
     if (error) {
       toast.error(t.auth.error);
     } else if (data) {
-      // Set all presenters in the junction table
       if (formData.presenterIds.length > 0) {
         await setEventPresenters(data.id, formData.presenterIds);
       }
       toast.success("Événement créé !");
       setEvents([data, ...events]);
       setIsCreateEventOpen(false);
-      // Show dialog asking if user wants to add PDFs
       setNewlyCreatedEvent({ event: data, presenterIds: formData.presenterIds });
       setIsAddPdfDialogOpen(true);
     }
@@ -173,7 +173,7 @@ const Admin = () => {
       event_date: eventDateTime.toISOString(),
       location: formData.location || null,
       participant_limit: formData.participantLimit ? parseInt(formData.participantLimit) : null,
-      presenter_id: formData.presenterIds[0] || null, // Keep first presenter in legacy field
+      presenter_id: formData.presenterIds[0] || null,
       status: formData.status,
       category: formData.category || null,
     });
@@ -181,7 +181,6 @@ const Admin = () => {
     if (error) {
       toast.error(t.auth.error);
     } else if (data) {
-      // Update presenters in the junction table
       await setEventPresenters(editingEvent.id, formData.presenterIds);
       toast.success("Événement mis à jour");
       setEvents(events.map((e) => (e.id === editingEvent.id ? data : e)));
@@ -193,7 +192,6 @@ const Admin = () => {
 
   const openEditDialog = async (event: Event) => {
     setEditingEvent(event);
-    // Load current presenters for this event
     const { data: eventPresenters } = await getEventPresenters(event.id);
     const presenterIds = eventPresenters?.map(ep => ep.presenter_id) || [];
     setEditingEventPresenterIds(presenterIds);
@@ -227,12 +225,6 @@ const Admin = () => {
       default:
         return status;
     }
-  };
-
-  const getInvitationStatusLabel = (invitation: Invitation) => {
-    if (invitation.status === "used") return t.admin.used;
-    if (new Date(invitation.expires_at) < new Date()) return t.admin.expired;
-    return t.admin.pending;
   };
 
   const formatDate = (dateString: string) => {
@@ -334,15 +326,19 @@ const Admin = () => {
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>{t.admin.createInvitation}</DialogTitle>
+                      <DialogDescription>
+                        Un email d'invitation sera envoyé à l'adresse indiquée.
+                      </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 mt-4">
                       <div className="space-y-2">
-                        <Label>{t.auth.email} (optionnel)</Label>
+                        <Label>{t.auth.email}</Label>
                         <Input
                           type="email"
                           value={newInviteEmail}
                           onChange={(e) => setNewInviteEmail(e.target.value)}
                           placeholder="email@exemple.com"
+                          required
                         />
                       </div>
                       <div className="space-y-2">
@@ -365,45 +361,25 @@ const Admin = () => {
                         variant="nightBlue"
                         className="w-full"
                         onClick={handleCreateInvitation}
+                        disabled={isInviting || !newInviteEmail}
                       >
-                        {t.admin.createInvitation}
+                        <Mail className="w-4 h-4 mr-2" />
+                        {isInviting ? "Envoi en cours..." : "Envoyer l'invitation"}
                       </Button>
                     </div>
                   </DialogContent>
                 </Dialog>
               </div>
 
-              {invitations.length === 0 ? (
-                <p className="text-muted-foreground">{t.admin.noInvitations}</p>
-              ) : (
-                <div className="space-y-2">
-                  {invitations.map((invitation) => (
-                    <div
-                      key={invitation.id}
-                      className="flex items-center justify-between py-4 px-4 border border-border bg-muted/30"
-                    >
-                      <div className="flex-1">
-                        <p className="font-sans text-sm">
-                          {invitation.email || "Sans email spécifique"}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {invitation.role} • {getInvitationStatusLabel(invitation)} • {formatDate(invitation.created_at)}
-                        </p>
-                      </div>
-                      {invitation.status === "pending" && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCopyLink(invitation.token)}
-                        >
-                          <Copy className="w-4 h-4 mr-2" />
-                          {t.admin.copyLink}
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="py-12 text-center border border-border/50 rounded-lg bg-muted/20">
+                <Mail className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
+                  Les invitations sont maintenant gérées via Supabase Auth.
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Cliquez sur "Créer une invitation" pour inviter un nouvel utilisateur par email.
+                </p>
+              </div>
             </motion.div>
           ) : activeTab === "events" ? (
             /* Events Tab */

@@ -9,10 +9,8 @@ type EventRegistration = Database["public"]["Tables"]["event_registrations"]["Ro
 export interface EventWithPresenter extends Event {
   presenter?: {
     id: string;
-    first_name: string | null;
-    last_name: string | null;
+    full_name: string | null;
     bio: string | null;
-    professional_background: string | null;
     avatar_url: string | null;
   } | null;
   registrations_count?: number;
@@ -26,10 +24,8 @@ export const getPublishedEvents = async (): Promise<{ data: EventWithPresenter[]
       *,
       presenter:profiles!events_presenter_id_fkey(
         id,
-        first_name,
-        last_name,
+        full_name,
         bio,
-        professional_background,
         avatar_url
       )
     `)
@@ -46,10 +42,8 @@ export const getUpcomingEvents = async (): Promise<{ data: EventWithPresenter[] 
       *,
       presenter:profiles!events_presenter_id_fkey(
         id,
-        first_name,
-        last_name,
+        full_name,
         bio,
-        professional_background,
         avatar_url
       )
     `)
@@ -67,10 +61,8 @@ export const getPastEvents = async (): Promise<{ data: EventWithPresenter[] | nu
       *,
       presenter:profiles!events_presenter_id_fkey(
         id,
-        first_name,
-        last_name,
+        full_name,
         bio,
-        professional_background,
         avatar_url
       )
     `)
@@ -87,10 +79,8 @@ export const getEventById = async (id: string, userId?: string): Promise<{ data:
       *,
       presenter:profiles!events_presenter_id_fkey(
         id,
-        first_name,
-        last_name,
+        full_name,
         bio,
-        professional_background,
         avatar_url
       )
     `)
@@ -119,7 +109,7 @@ export const getEventById = async (id: string, userId?: string): Promise<{ data:
       .eq("event_id", id)
       .eq("user_id", userId)
       .neq("status", "cancelled")
-      .single();
+      .maybeSingle();
     userRegistration = reg;
   }
 
