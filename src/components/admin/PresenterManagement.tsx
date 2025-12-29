@@ -21,18 +21,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { Plus, Pencil, Upload, User, Calendar, Trash2 } from "lucide-react";
-import { createPresenterProfile, updateProfile, uploadPresenterAvatar, deletePresenter } from "@/services/profiles";
+import { updateProfile, uploadPresenterAvatar, deletePresenter } from "@/services/profiles";
 import { getPresentationsByPresenter } from "@/services/presentations";
 import { Link } from "react-router-dom";
 
@@ -48,27 +41,14 @@ interface PresenterManagementProps {
 const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: PresenterManagementProps) => {
   const { t } = useLanguage();
   
-  // Create presenter state
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [bio, setBio] = useState("");
-  const [professionalBackground, setProfessionalBackground] = useState("");
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   // Edit presenter state
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingPresenter, setEditingPresenter] = useState<Profile | null>(null);
-  const [editFirstName, setEditFirstName] = useState("");
-  const [editLastName, setEditLastName] = useState("");
+  const [editFullName, setEditFullName] = useState("");
   const [editBio, setEditBio] = useState("");
-  const [editProfessionalBackground, setEditProfessionalBackground] = useState("");
   const [editPhotoFile, setEditPhotoFile] = useState<File | null>(null);
   const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Presentations view state
   const [viewingPresentations, setViewingPresentations] = useState<Profile | null>(null);
@@ -79,73 +59,18 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
   const [presenterToDelete, setPresenterToDelete] = useState<Profile | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (isEdit) {
-        setEditPhotoFile(file);
-        setEditPhotoPreview(URL.createObjectURL(file));
-      } else {
-        setPhotoFile(file);
-        setPhotoPreview(URL.createObjectURL(file));
-      }
+      setEditPhotoFile(file);
+      setEditPhotoPreview(URL.createObjectURL(file));
     }
-  };
-
-  const resetForm = () => {
-    setFirstName("");
-    setLastName("");
-    setEmail("");
-    setBio("");
-    setProfessionalBackground("");
-    setSelectedUserId("");
-    setPhotoFile(null);
-    setPhotoPreview(null);
-  };
-
-  const handleCreatePresenter = async () => {
-    if (!firstName || !lastName || !email) {
-      toast.error("Prénom, nom et email sont requis");
-      return;
-    }
-
-    setIsSubmitting(true);
-    
-    const { data, error } = await createPresenterProfile({
-      first_name: firstName,
-      last_name: lastName,
-      email,
-      bio: bio || undefined,
-      professional_background: professionalBackground || undefined,
-      user_id: selectedUserId || undefined,
-    });
-
-    if (error) {
-      toast.error(t.auth.error);
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (data && photoFile) {
-      const { url, error: uploadError } = await uploadPresenterAvatar(photoFile, data.id);
-      if (!uploadError && url) {
-        await updateProfile(data.id, { avatar_url: url });
-      }
-    }
-
-    toast.success(t.admin.presenterCreated);
-    resetForm();
-    setIsCreateOpen(false);
-    setIsSubmitting(false);
-    onPresentersChange();
   };
 
   const handleEditPresenter = (presenter: Profile) => {
     setEditingPresenter(presenter);
-    setEditFirstName(presenter.first_name || "");
-    setEditLastName(presenter.last_name || "");
+    setEditFullName(presenter.full_name || "");
     setEditBio(presenter.bio || "");
-    setEditProfessionalBackground(presenter.professional_background || "");
     setEditPhotoPreview(presenter.avatar_url);
     setEditPhotoFile(null);
     setIsEditOpen(true);
@@ -166,10 +91,8 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
     }
 
     const { error } = await updateProfile(editingPresenter.id, {
-      first_name: editFirstName,
-      last_name: editLastName,
+      full_name: editFullName,
       bio: editBio || null,
-      professional_background: editProfessionalBackground || null,
       avatar_url: avatarUrl,
     });
 
@@ -219,8 +142,18 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
     setPresenterToDelete(null);
   };
 
-  // Get non-presenter profiles for linking
+  // Get profiles that could be marked as presenters
   const linkableProfiles = allProfiles.filter(p => !p.is_presenter);
+
+  const handleMarkAsPresenter = async (profileId: string) => {
+    const { error } = await updateProfile(profileId, { is_presenter: true });
+    if (error) {
+      toast.error(t.auth.error);
+    } else {
+      toast.success(t.admin.presenterCreated);
+      onPresentersChange();
+    }
+  };
 
   return (
     <motion.div
@@ -231,7 +164,7 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
     >
       <div className="flex justify-between items-center mb-8">
         <h2 className="font-serif text-xl">{t.admin.presenters}</h2>
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <Dialog>
           <DialogTrigger asChild>
             <Button variant="nightBlue" size="sm">
               <Plus className="w-4 h-4 mr-2" />
@@ -240,104 +173,50 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
           </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{t.admin.createPresenter}</DialogTitle>
+              <DialogTitle>Ajouter un intervenant</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
-              {/* Photo upload */}
-              <div className="space-y-2">
-                <Label>{t.admin.photo}</Label>
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                    {photoPreview ? (
-                      <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <User className="w-8 h-8 text-muted-foreground" />
-                    )}
-                  </div>
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handlePhotoChange(e)}
-                    />
-                    <span className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
-                      <Upload className="w-4 h-4" />
-                      {t.admin.uploadPhoto}
-                    </span>
-                  </label>
+              <p className="text-sm text-muted-foreground">
+                Sélectionnez un membre existant pour le marquer comme intervenant.
+                Pour ajouter un nouvel intervenant, invitez-le d'abord via la section Invitations.
+              </p>
+              
+              {linkableProfiles.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">
+                  Aucun membre disponible. Invitez d'abord de nouveaux membres.
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {linkableProfiles.map((profile) => (
+                    <div
+                      key={profile.id}
+                      className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                          {profile.avatar_url ? (
+                            <img
+                              src={profile.avatar_url}
+                              alt={profile.full_name || ""}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User className="w-5 h-5 text-muted-foreground" />
+                          )}
+                        </div>
+                        <span className="font-medium">{profile.full_name || "Sans nom"}</span>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleMarkAsPresenter(profile.id)}
+                      >
+                        Ajouter
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{t.admin.firstName} *</Label>
-                  <Input
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t.admin.lastName} *</Label>
-                  <Input
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>{t.auth.email} *</Label>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>{t.admin.professionalBackground}</Label>
-                <Input
-                  value={professionalBackground}
-                  onChange={(e) => setProfessionalBackground(e.target.value)}
-                  placeholder="Ex: Architecte, Historien de l'art..."
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>{t.admin.bio}</Label>
-                <Textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  rows={4}
-                  placeholder="Biographie de l'intervenant..."
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>{t.admin.linkToUser}</Label>
-                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Optionnel - Lier à un compte existant" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {linkableProfiles.map((profile) => (
-                      <SelectItem key={profile.user_id} value={profile.user_id}>
-                        {profile.first_name} {profile.last_name} ({profile.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                variant="nightBlue"
-                className="w-full"
-                onClick={handleCreatePresenter}
-                disabled={!firstName || !lastName || !email || isSubmitting}
-              >
-                {isSubmitting ? t.common.loading : t.admin.createPresenter}
-              </Button>
+              )}
             </div>
           </DialogContent>
         </Dialog>
@@ -366,7 +245,7 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => handlePhotoChange(e, true)}
+                    onChange={handlePhotoChange}
                   />
                   <span className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
                     <Upload className="w-4 h-4" />
@@ -376,28 +255,11 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>{t.admin.firstName}</Label>
-                <Input
-                  value={editFirstName}
-                  onChange={(e) => setEditFirstName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{t.admin.lastName}</Label>
-                <Input
-                  value={editLastName}
-                  onChange={(e) => setEditLastName(e.target.value)}
-                />
-              </div>
-            </div>
-
             <div className="space-y-2">
-              <Label>{t.admin.professionalBackground}</Label>
+              <Label>Nom complet</Label>
               <Input
-                value={editProfessionalBackground}
-                onChange={(e) => setEditProfessionalBackground(e.target.value)}
+                value={editFullName}
+                onChange={(e) => setEditFullName(e.target.value)}
               />
             </div>
 
@@ -427,7 +289,7 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {t.admin.presentations} - {viewingPresentations?.first_name} {viewingPresentations?.last_name}
+              {t.admin.presentations} - {viewingPresentations?.full_name}
             </DialogTitle>
           </DialogHeader>
           <div className="mt-4">
@@ -461,7 +323,7 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer l'intervenant ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer {presenterToDelete?.first_name} {presenterToDelete?.last_name} de la liste des intervenants ? 
+              Êtes-vous sûr de vouloir supprimer {presenterToDelete?.full_name} de la liste des intervenants ? 
               Cette action retirera le statut d'intervenant mais conservera le profil.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -493,12 +355,12 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
                   {presenter.avatar_url ? (
                     <img
                       src={presenter.avatar_url}
-                      alt={`${presenter.first_name} ${presenter.last_name}`}
+                      alt={presenter.full_name || ""}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <span className="text-sm font-serif text-muted-foreground">
-                      {presenter.first_name?.[0]}{presenter.last_name?.[0]}
+                      {presenter.full_name?.split(" ").map(n => n[0]).join("") || "?"}
                     </span>
                   )}
                 </div>
@@ -507,10 +369,11 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
                     to={`/presentateur/${presenter.id}`}
                     className="font-serif text-lg hover:text-primary transition-colors"
                   >
-                    {presenter.first_name} {presenter.last_name}
+                    {presenter.full_name || "Sans nom"}
                   </Link>
                   <p className="text-sm text-muted-foreground">
-                    {presenter.professional_background || presenter.email}
+                    {presenter.bio?.slice(0, 60) || "Aucune bio"}
+                    {presenter.bio && presenter.bio.length > 60 ? "..." : ""}
                   </p>
                 </div>
               </div>

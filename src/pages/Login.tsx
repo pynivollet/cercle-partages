@@ -1,20 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Eye, EyeOff, Mail } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/i18n/LanguageContext";
-import { validateInvitationToken } from "@/services/invitations";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -23,54 +15,16 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-const signupSchema = z.object({
-  inviteCode: z.string().min(1),
-  email: z.string().trim().email(),
-  password: z.string().min(8),
-  confirmPassword: z.string().min(8),
-  firstName: z.string().trim().optional(),
-  lastName: z.string().trim().optional(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
-
 const Login = () => {
-  const [isInvitation, setIsInvitation] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, user } = useAuth();
   const { t } = useLanguage();
 
   // Login form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  // Signup form state
-  const [inviteCode, setInviteCode] = useState("");
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupPassword, setSignupPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-
-  // Password visibility states
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
-  const [showSignupPassword, setShowSignupPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  // Email confirmation dialog
-  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
-
-  // Check for invitation token in URL
-  useEffect(() => {
-    const invitation = searchParams.get("invitation");
-    if (invitation) {
-      setInviteCode(invitation);
-      setIsInvitation(true);
-    }
-  }, [searchParams]);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -104,59 +58,6 @@ const Login = () => {
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const validation = signupSchema.safeParse({
-      inviteCode,
-      email: signupEmail,
-      password: signupPassword,
-      confirmPassword,
-      firstName,
-      lastName,
-    });
-
-    if (!validation.success) {
-      const firstError = validation.error.errors[0];
-      if (firstError.path.includes("confirmPassword")) {
-        toast.error(t.auth.passwordMismatch);
-      } else if (firstError.path.includes("password")) {
-        toast.error(t.auth.passwordTooShort);
-      } else if (firstError.path.includes("email")) {
-        toast.error(t.auth.emailRequired);
-      } else {
-        toast.error(t.auth.error);
-      }
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Validate invitation token first
-      const { valid, error: inviteError } = await validateInvitationToken(inviteCode);
-      if (!valid) {
-        toast.error(inviteError || t.auth.invalidInvitation);
-        setIsLoading(false);
-        return;
-      }
-
-      const { error } = await signUp(signupEmail, signupPassword, inviteCode, {
-        first_name: firstName,
-        last_name: lastName,
-      });
-
-      if (error) {
-        toast.error(error.message || t.auth.error);
-      } else {
-        setShowEmailConfirmation(true);
-      }
-    } catch {
-      toast.error(t.auth.error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background flex">
       {/* Left Panel - Form */}
@@ -174,237 +75,78 @@ const Login = () => {
             </h1>
           </Link>
 
-          {/* Toggle */}
-          <div className="flex gap-8 mb-12 border-b border-border">
-            <button
-              onClick={() => setIsInvitation(false)}
-              className={`pb-4 font-sans text-sm transition-colors relative ${
-                !isInvitation
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
+          {/* Title */}
+          <div className="mb-12">
+            <h2 className="font-serif text-2xl text-foreground mb-2">
               {t.auth.login}
-              {!isInvitation && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute bottom-0 left-0 right-0 h-px bg-foreground"
-                />
-              )}
-            </button>
-            <button
-              onClick={() => setIsInvitation(true)}
-              className={`pb-4 font-sans text-sm transition-colors relative ${
-                isInvitation
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {t.auth.invitation}
-              {isInvitation && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute bottom-0 left-0 right-0 h-px bg-foreground"
-                />
-              )}
-            </button>
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              Accès réservé aux membres invités
+            </p>
           </div>
 
-          {!isInvitation ? (
-            /* Login Form */
-            <motion.form
-              key="login"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4 }}
-              className="space-y-6"
-              onSubmit={handleLogin}
+          {/* Login Form */}
+          <motion.form
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className="space-y-6"
+            onSubmit={handleLogin}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="email" className="font-sans text-sm">
+                {t.auth.email}
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="votre@email.com"
+                className="h-12 bg-transparent border-border focus:border-foreground"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className="font-sans text-sm">
+                {t.auth.password}
+              </Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder=""
+                  className="h-12 bg-transparent border-border focus:border-foreground pr-12"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </div>
+
+            <Button 
+              variant="nightBlue" 
+              size="lg" 
+              className="w-full mt-8"
+              disabled={isLoading}
             >
-              <div className="space-y-2">
-                <Label htmlFor="email" className="font-sans text-sm">
-                  {t.auth.email}
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="votre@email.com"
-                  className="h-12 bg-transparent border-border focus:border-foreground"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
+              {isLoading ? t.common.loading : t.auth.loginButton}
+            </Button>
 
-              <div className="space-y-2">
-                <Label htmlFor="password" className="font-sans text-sm">
-                  {t.auth.password}
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showLoginPassword ? "text" : "password"}
-                    placeholder=""
-                    className="h-12 bg-transparent border-border focus:border-foreground pr-12"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowLoginPassword(!showLoginPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showLoginPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-              </div>
-
-              <Button 
-                variant="nightBlue" 
-                size="lg" 
-                className="w-full mt-8"
-                disabled={isLoading}
-              >
-                {isLoading ? t.common.loading : t.auth.loginButton}
-              </Button>
-
-              <p className="text-center text-sm text-muted-foreground mt-6">
-                <a href="#" className="hover:text-foreground transition-colors">
-                  {t.auth.forgotPassword}
-                </a>
-              </p>
-            </motion.form>
-          ) : (
-            /* Invitation Form */
-            <motion.form
-              key="invitation"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4 }}
-              className="space-y-6"
-              onSubmit={handleSignup}
-            >
-              <p className="text-muted-foreground mb-8">
-                {t.auth.invitationDescription}
-              </p>
-
-              <div className="space-y-2">
-                <Label htmlFor="inviteCode" className="font-sans text-sm">
-                  {t.auth.inviteCode}
-                </Label>
-                <Input
-                  id="inviteCode"
-                  type="text"
-                  placeholder="XXXX-XXXX-XXXX"
-                  className="h-12 bg-transparent border-border focus:border-foreground font-mono tracking-widest"
-                  value={inviteCode}
-                  onChange={(e) => setInviteCode(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName" className="font-sans text-sm">
-                    {t.auth.firstName}
-                  </Label>
-                  <Input
-                    id="firstName"
-                    type="text"
-                    className="h-12 bg-transparent border-border focus:border-foreground"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName" className="font-sans text-sm">
-                    {t.auth.lastName}
-                  </Label>
-                  <Input
-                    id="lastName"
-                    type="text"
-                    className="h-12 bg-transparent border-border focus:border-foreground"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="signupEmail" className="font-sans text-sm">
-                  {t.auth.email}
-                </Label>
-                <Input
-                  id="signupEmail"
-                  type="email"
-                  placeholder="votre@email.com"
-                  className="h-12 bg-transparent border-border focus:border-foreground"
-                  value={signupEmail}
-                  onChange={(e) => setSignupEmail(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="signupPassword" className="font-sans text-sm">
-                  {t.auth.password}
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="signupPassword"
-                    type={showSignupPassword ? "text" : "password"}
-                    placeholder=""
-                    className="h-12 bg-transparent border-border focus:border-foreground pr-12"
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                    required
-                    minLength={8}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowSignupPassword(!showSignupPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showSignupPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="font-sans text-sm">
-                  {t.auth.confirmPassword}
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder=""
-                    className="h-12 bg-transparent border-border focus:border-foreground pr-12"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    minLength={8}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-              </div>
-
-              <Button 
-                variant="nightBlue" 
-                size="lg" 
-                className="w-full mt-8"
-                disabled={isLoading}
-              >
-                {isLoading ? t.common.loading : t.auth.signupButton}
-              </Button>
-            </motion.form>
-          )}
+            <p className="text-center text-sm text-muted-foreground mt-6">
+              <a href="#" className="hover:text-foreground transition-colors">
+                {t.auth.forgotPassword}
+              </a>
+            </p>
+          </motion.form>
         </motion.div>
       </div>
 
@@ -429,35 +171,6 @@ const Login = () => {
         <div className="absolute top-0 right-0 w-96 h-96 border border-primary-foreground/10 rounded-full translate-x-1/2 -translate-y-1/2" />
         <div className="absolute bottom-0 left-0 w-64 h-64 border border-primary-foreground/10 rounded-full -translate-x-1/2 translate-y-1/2" />
       </div>
-
-      {/* Email Confirmation Dialog */}
-      <Dialog open={showEmailConfirmation} onOpenChange={setShowEmailConfirmation}>
-        <DialogContent className="max-w-md text-center">
-          <DialogHeader className="items-center">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <Mail className="w-8 h-8 text-primary" />
-            </div>
-            <DialogTitle className="text-xl">{t.auth.emailConfirmationTitle}</DialogTitle>
-            <DialogDescription className="pt-2 text-base">
-              {t.auth.emailConfirmationMessage}
-              <br /><br />
-              <span className="text-muted-foreground text-sm">
-                {t.auth.emailConfirmationHint}
-              </span>
-            </DialogDescription>
-          </DialogHeader>
-          <Button 
-            variant="nightBlue" 
-            className="mt-4"
-            onClick={() => {
-              setShowEmailConfirmation(false);
-              setIsInvitation(false);
-            }}
-          >
-            {t.common.confirm}
-          </Button>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

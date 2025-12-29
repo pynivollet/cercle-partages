@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { getEventById, EventWithPresenter, registerForEvent, cancelRegistration } from "@/services/events";
 import { getEventDocuments, EventDocument } from "@/services/eventDocuments";
-import { getEventPresenters, EventPresenter } from "@/services/eventPresenters";
+import { getEventPresenters } from "@/services/eventPresenters";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -108,11 +108,13 @@ const EventDetail = () => {
     return format(new Date(dateString), "HH'h'mm", { locale: fr });
   };
 
-  const getPresenterName = (presenter: Profile | EventWithPresenter["presenter"]) => {
-    if (!presenter) return "Intervenant à confirmer";
-    const firstName = presenter.first_name || "";
-    const lastName = presenter.last_name || "";
-    return `${firstName} ${lastName}`.trim() || "Intervenant";
+  const getPresenterName = (presenter: Profile) => {
+    return presenter.full_name || "Intervenant";
+  };
+
+  const getInitials = (presenter: Profile) => {
+    const name = presenter.full_name || "";
+    return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
   };
 
   if (loading) {
@@ -337,7 +339,7 @@ const EventDetail = () => {
           <section className="bg-muted/30 section-padding">
             <div className="editorial-container">
               <p className="font-sans text-sm tracking-widest uppercase text-muted-foreground mb-8">
-                {presenters.length > 1 ? "Présenté par" : "Présenté par"}
+                Présenté par
               </p>
               <div className="space-y-16">
                 {presenters.map((presenter, index) => (
@@ -361,7 +363,7 @@ const EventDetail = () => {
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                             <span className="text-6xl font-serif">
-                              {(presenter.first_name?.[0] || "") + (presenter.last_name?.[0] || "")}
+                              {getInitials(presenter)}
                             </span>
                           </div>
                         )}
@@ -373,11 +375,6 @@ const EventDetail = () => {
                       <h2 className="font-serif text-3xl text-foreground mb-2">
                         {getPresenterName(presenter)}
                       </h2>
-                      {presenter.professional_background && (
-                        <p className="font-sans text-ochre mb-6">
-                          {presenter.professional_background}
-                        </p>
-                      )}
                       {presenter.bio && (
                         <p className="text-lg text-muted-foreground leading-relaxed">
                           {presenter.bio}

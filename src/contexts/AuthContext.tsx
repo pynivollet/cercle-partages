@@ -4,18 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
-
-interface Profile {
-  id: string;
-  user_id: string;
-  email: string;
-  first_name: string | null;
-  last_name: string | null;
-  bio: string | null;
-  professional_background: string | null;
-  avatar_url: string | null;
-  is_presenter: boolean | null;
-}
+type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 interface AuthContextType {
   user: User | null;
@@ -26,7 +15,6 @@ interface AuthContextType {
   isAdmin: boolean;
   isPresenter: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, invitationToken: string, metadata?: { first_name?: string; last_name?: string }) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -48,7 +36,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const { data } = await supabase
       .from("profiles")
       .select("*")
-      .eq("user_id", userId)
+      .eq("id", userId)
       .single();
     
     if (data) {
@@ -119,31 +107,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return { error };
   };
 
-  const signUp = async (
-    email: string,
-    password: string,
-    invitationToken: string,
-    metadata?: { first_name?: string; last_name?: string }
-  ) => {
-    const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
-    const redirectUrl = `${baseUrl}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          invitation_token: invitationToken,
-          first_name: metadata?.first_name,
-          last_name: metadata?.last_name,
-        },
-      },
-    });
-    
-    return { error };
-  };
-
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -166,7 +129,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isAdmin,
         isPresenter,
         signIn,
-        signUp,
         signOut,
         refreshProfile,
       }}

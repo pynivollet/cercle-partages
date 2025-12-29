@@ -182,45 +182,6 @@ export type Database = {
           },
         ]
       }
-      invitations: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          email: string | null
-          expires_at: string
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          status: Database["public"]["Enums"]["invitation_status"]
-          token: string
-          used_at: string | null
-          used_by: string | null
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          email?: string | null
-          expires_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          status?: Database["public"]["Enums"]["invitation_status"]
-          token?: string
-          used_at?: string | null
-          used_by?: string | null
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          email?: string | null
-          expires_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          status?: Database["public"]["Enums"]["invitation_status"]
-          token?: string
-          used_at?: string | null
-          used_by?: string | null
-        }
-        Relationships: []
-      }
       presentations: {
         Row: {
           created_at: string
@@ -283,40 +244,28 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
-          email: string
-          first_name: string | null
+          full_name: string | null
           id: string
           is_presenter: boolean | null
-          last_name: string | null
-          professional_background: string | null
           updated_at: string
-          user_id: string
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
-          email: string
-          first_name?: string | null
-          id?: string
+          full_name?: string | null
+          id: string
           is_presenter?: boolean | null
-          last_name?: string | null
-          professional_background?: string | null
           updated_at?: string
-          user_id: string
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
-          email?: string
-          first_name?: string | null
+          full_name?: string | null
           id?: string
           is_presenter?: boolean | null
-          last_name?: string | null
-          professional_background?: string | null
           updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }
@@ -354,16 +303,6 @@ export type Database = {
         Returns: boolean
       }
       is_authenticated: { Args: never; Returns: boolean }
-      validate_invitation_token: {
-        Args: { invitation_token: string }
-        Returns: {
-          email: string
-          expires_at: string
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          status: Database["public"]["Enums"]["invitation_status"]
-        }[]
-      }
     }
     Enums: {
       app_role: "admin" | "presenter" | "participant"
@@ -376,7 +315,6 @@ export type Database = {
         | "economie_locale"
         | "science_moderne"
       event_status: "draft" | "published" | "cancelled" | "completed"
-      invitation_status: "pending" | "used" | "expired"
       registration_status: "confirmed" | "waitlist" | "cancelled"
     }
     CompositeTypes: {
@@ -516,7 +454,6 @@ export const Constants = {
         "science_moderne",
       ],
       event_status: ["draft", "published", "cancelled", "completed"],
-      invitation_status: ["pending", "used", "expired"],
       registration_status: ["confirmed", "waitlist", "cancelled"],
     },
   },
