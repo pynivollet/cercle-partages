@@ -32,26 +32,53 @@ const Signup = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  // Extract token from URL hash on mount
+  // Handle invitation token from URL
   useEffect(() => {
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const token = hashParams.get("access_token");
-    const type = hashParams.get("type");
-    
-    if (token && type === "invite") {
-      setAccessToken(token);
-      // Decode the token to get user email
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setUserEmail(payload.email);
-      } catch (e) {
-        console.error("Error parsing token:", e);
+    const handleInviteToken = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+      const type = hashParams.get("type");
+      
+      // Check for invite or signup type (Supabase uses both)
+      if (accessToken && (type === "invite" || type === "signup" || type === "recovery")) {
+        try {
+          // Set the session with both tokens
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || "",
+          });
+
+          if (error) {
+            console.error("Session error:", error);
+            toast.error("Lien d'invitation invalide ou expiré");
+            navigate("/connexion");
+            return;
+          }
+
+          if (data.user) {
+            setAccessToken(accessToken);
+            setUserEmail(data.user.email || null);
+          }
+        } catch (e) {
+          console.error("Error setting session:", e);
+          toast.error("Erreur lors de la validation de l'invitation");
+          navigate("/connexion");
+        }
+      } else {
+        // Check if user is already logged in (came from a direct link)
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setAccessToken(session.access_token);
+          setUserEmail(session.user.email || null);
+        } else {
+          toast.error("Lien d'invitation invalide ou expiré");
+          navigate("/connexion");
+        }
       }
-    } else {
-      // No valid invite token, redirect to login
-      toast.error("Lien d'invitation invalide ou expiré");
-      navigate("/connexion");
-    }
+    };
+
+    handleInviteToken();
   }, [navigate]);
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -71,17 +98,7 @@ const Signup = () => {
 
     setIsLoading(true);
     try {
-      // Set the session with the invite token
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: "",
-      });
-
-      if (sessionError) {
-        console.error("Session error:", sessionError);
-        toast.error("Erreur lors de la validation de l'invitation");
-        return;
-      }
+      // Session should already be set from useEffect
 
       // Update the user's password
       const { error: updateError } = await supabase.auth.updateUser({
