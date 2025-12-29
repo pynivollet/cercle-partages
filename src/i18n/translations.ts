@@ -42,6 +42,27 @@ export const translations = {
         "Un email de confirmation a été envoyé à votre adresse email. Cliquez sur le lien dans l'email pour finaliser la création de votre compte.",
       emailConfirmationHint: "Si vous ne trouvez pas l'email, vérifiez votre dossier spam.",
     },
+
+    acceptInvitation: {
+      title: "Finaliser votre inscription à Cercle Partages",
+      subtitle: "Définissez votre mot de passe pour rejoindre le Cercle.",
+      subtitleWithEmail: "Définissez votre mot de passe pour {email}.",
+      passwordPlaceholder: "Minimum 8 caractères",
+      confirmPasswordPlaceholder: "Confirmez votre mot de passe",
+      submit: "Rejoindre le Cercle",
+      success: "Votre compte est activé. Bienvenue au Cercle Partages.",
+      haveAccount: "Déjà un compte ?",
+      showPassword: "Afficher le mot de passe",
+      hidePassword: "Masquer le mot de passe",
+      errors: {
+        invalid: "Lien d'invitation invalide. Veuillez utiliser le lien envoyé par email.",
+        expired: "Ce lien d'invitation a expiré. Veuillez demander une nouvelle invitation.",
+        generic: "Une erreur est survenue lors de la validation de l'invitation.",
+        passwordMismatch: "Les mots de passe ne correspondent pas.",
+        passwordTooShort: "Le mot de passe doit contenir au moins 8 caractères.",
+        updateFailed: "Impossible de définir le mot de passe. Veuillez réessayer.",
+      },
+    },
     // Hero
     hero: {
       slogan: "L'appétit pour l'altérité",
@@ -244,6 +265,27 @@ export const translations = {
       emailConfirmationTitle: "Account created with success",
       emailConfirmationMessage: "Your account has been created successfully.",
       emailConfirmationHint: "If you can't find the email, check your spam folder.",
+    },
+
+    acceptInvitation: {
+      title: "Complete your registration to Cercle Partages",
+      subtitle: "Set your password to join the Circle.",
+      subtitleWithEmail: "Set your password for {email}.",
+      passwordPlaceholder: "Minimum 8 characters",
+      confirmPasswordPlaceholder: "Confirm your password",
+      submit: "Join the Circle",
+      success: "Your account is now active. Welcome to Cercle Partages.",
+      haveAccount: "Already have an account?",
+      showPassword: "Show password",
+      hidePassword: "Hide password",
+      errors: {
+        invalid: "Invalid invitation link. Please use the link sent by email.",
+        expired: "This invitation link has expired. Please request a new invitation.",
+        generic: "An error occurred while validating the invitation.",
+        passwordMismatch: "Passwords do not match.",
+        passwordTooShort: "Password must be at least 8 characters.",
+        updateFailed: "Could not set password. Please try again.",
+      },
     },
     // Hero
     hero: {

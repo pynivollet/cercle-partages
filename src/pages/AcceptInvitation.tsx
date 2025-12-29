@@ -1,298 +1,235 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import { z } from "zod";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/i18n/LanguageContext";
 
-const passwordSchema = z.object({
-  password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Les mots de passe ne correspondent pas",
-  path: ["confirmPassword"],
-});
+const formSchema = z
+  .object({
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
-type InvitationState = "loading" | "valid" | "invalid" | "expired" | "already_confirmed";
+type PageState =
+  | "loading"
+  | "ready"
+  | "invalid_or_expired";
 
-const AcceptInvitation = () => {
-  const [invitationState, setInvitationState] = useState<InvitationState>("loading");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export default function AcceptInvitation() {
+  const navigate = useNavigate();
+  const { t } = useLanguage();
+
+  const [pageState, setPageState] = useState<PageState>("loading");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const redirectAfterSuccess = useMemo(() => "/evenements", []);
 
   useEffect(() => {
-    const handleInvitationToken = async () => {
-      try {
-        // Get session from URL hash (Supabase puts tokens in the URL hash)
-        const { data, error } = await supabase.auth.getSession();
-        
-        // Check URL hash for tokens
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get("access_token");
-        const refreshToken = hashParams.get("refresh_token");
-        const type = hashParams.get("type");
-        const errorCode = hashParams.get("error_code");
-        const errorDescription = hashParams.get("error_description");
+    const getSessionFromUrl = async () => {
+      // Supabase JS v2 does not expose getSessionFromUrl on the client instance.
+      // We replicate the behavior expected for native invitation links.
+      const hash = window.location.hash.startsWith("#")
+        ? window.location.hash.slice(1)
+        : window.location.hash;
+      const params = new URLSearchParams(hash);
 
-        // Handle URL errors
-        if (errorCode) {
-          console.error("Invitation error:", errorCode, errorDescription);
-          if (errorCode === "otp_expired") {
-            setInvitationState("expired");
-            setErrorMessage("Ce lien d'invitation a expiré. Veuillez demander une nouvelle invitation.");
-          } else {
-            setInvitationState("invalid");
-            setErrorMessage(errorDescription || "Lien d'invitation invalide.");
-          }
+      const errorCode = params.get("error_code");
+      const errorDescription = params.get("error_description");
+      if (errorCode) {
+        return {
+          data: { session: null as any },
+          error: new Error(errorDescription || errorCode),
+        };
+      }
+
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+      if (!accessToken || !refreshToken) {
+        return { data: { session: null as any }, error: null };
+      }
+
+      const { data, error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      // Clean URL hash for nicer UX
+      window.history.replaceState(null, "", window.location.pathname);
+
+      return { data: { session: data.session }, error };
+    };
+
+    const init = async () => {
+      try {
+        // 1) Parse session from URL for native Supabase invite links
+        const { data, error } = await getSessionFromUrl();
+
+        if (error) {
+          const message = error.message?.toLowerCase().includes("expired")
+            ? t.acceptInvitation.errors.expired
+            : t.acceptInvitation.errors.invalid;
+
+          setErrorMessage(message);
+          setPageState("invalid_or_expired");
           return;
         }
 
-        // If we have tokens in the URL, set the session
-        if (accessToken && refreshToken) {
-          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (sessionError) {
-            console.error("Session error:", sessionError);
-            if (sessionError.message.includes("expired")) {
-              setInvitationState("expired");
-              setErrorMessage("Ce lien d'invitation a expiré. Veuillez demander une nouvelle invitation.");
-            } else {
-              setInvitationState("invalid");
-              setErrorMessage("Impossible de valider l'invitation. Veuillez réessayer.");
-            }
-            return;
-          }
-
-          if (sessionData.user) {
-            setUserEmail(sessionData.user.email || null);
-            
-            // Check if user has already set a password (email_confirmed_at is set)
-            if (sessionData.user.email_confirmed_at && sessionData.user.last_sign_in_at) {
-              // User has already confirmed and signed in before
-              const confirmDate = new Date(sessionData.user.email_confirmed_at);
-              const signInDate = new Date(sessionData.user.last_sign_in_at);
-              
-              // If last sign in is significantly after confirmation, user is already set up
-              if (signInDate.getTime() - confirmDate.getTime() > 60000) {
-                setInvitationState("already_confirmed");
-                setTimeout(() => navigate("/"), 2000);
-                return;
-              }
-            }
-            
-            setInvitationState("valid");
-            // Clear the hash from URL for cleaner UX
-            window.history.replaceState(null, "", window.location.pathname);
-          }
-        } else if (data.session?.user) {
-          // Already have a session, check if this is a fresh invite flow
-          setUserEmail(data.session.user.email || null);
-          setInvitationState("valid");
-        } else {
-          // No tokens and no session
-          setInvitationState("invalid");
-          setErrorMessage("Aucun lien d'invitation valide trouvé. Veuillez utiliser le lien envoyé par email.");
+        // If invite link is valid, we will have a session.
+        if (data.session?.user) {
+          setUserEmail(data.session.user.email ?? null);
+          setPageState("ready");
+          return;
         }
-      } catch (err) {
-        console.error("Error processing invitation:", err);
-        setInvitationState("invalid");
-        setErrorMessage("Une erreur est survenue lors du traitement de l'invitation.");
+
+        // 2) If user is already authenticated, go to the app
+        const { data: existing } = await supabase.auth.getSession();
+        if (existing.session?.user) {
+          navigate(redirectAfterSuccess, { replace: true });
+          return;
+        }
+
+        // 3) Otherwise, the link is invalid / already used / missing
+        setErrorMessage(t.acceptInvitation.errors.invalid);
+        setPageState("invalid_or_expired");
+      } catch {
+        setErrorMessage(t.acceptInvitation.errors.generic);
+        setPageState("invalid_or_expired");
       }
     };
 
-    handleInvitationToken();
-  }, [navigate]);
+    init();
+  }, [navigate, redirectAfterSuccess, t.acceptInvitation.errors.expired, t.acceptInvitation.errors.generic, t.acceptInvitation.errors.invalid]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const validation = passwordSchema.safeParse({ password, confirmPassword });
-    if (!validation.success) {
-      toast.error(validation.error.errors[0].message);
+
+    const result = formSchema.safeParse({ password, confirmPassword });
+    if (!result.success) {
+      const firstIssue = result.error.issues[0];
+      const msg =
+        firstIssue.path?.[0] === "confirmPassword"
+          ? t.acceptInvitation.errors.passwordMismatch
+          : t.acceptInvitation.errors.passwordTooShort;
+      toast.error(msg);
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Update the user's password
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: password,
-      });
-
-      if (updateError) {
-        console.error("Password update error:", updateError);
-        toast.error("Erreur lors de la définition du mot de passe. Veuillez réessayer.");
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        toast.error(t.acceptInvitation.errors.updateFailed);
         return;
       }
 
-      // Get the current user to update profile if needed
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        // Ensure profile exists with user info
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .upsert({ 
-            id: user.id,
-            updated_at: new Date().toISOString()
-          }, { 
-            onConflict: "id" 
-          });
-
-        if (profileError) {
-          console.error("Profile update error:", profileError);
-          // Don't block the flow for profile issues
-        }
-      }
-
-      toast.success("Votre compte est activé ! Bienvenue au Cercle Partages.");
-      navigate("/");
-    } catch (error) {
-      console.error("Submission error:", error);
-      toast.error("Une erreur est survenue. Veuillez réessayer.");
+      toast.success(t.acceptInvitation.success);
+      navigate(redirectAfterSuccess, { replace: true });
+    } catch {
+      toast.error(t.acceptInvitation.errors.generic);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Loading state
-  if (invitationState === "loading") {
+  if (pageState === "loading") {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center"
-        >
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Vérification de l'invitation...</p>
-        </motion.div>
-      </div>
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse">
+          <p className="font-serif text-2xl text-foreground">Cercle Partages</p>
+          <p className="text-muted-foreground text-sm mt-2">{t.common.loading}</p>
+        </div>
+      </main>
     );
   }
 
-  // Error states
-  if (invitationState === "invalid" || invitationState === "expired") {
+  if (pageState === "invalid_or_expired") {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+      <main className="min-h-screen bg-background flex items-center justify-center p-8">
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-md text-center"
+          className="max-w-md w-full"
+          aria-labelledby="accept-invitation-title"
         >
-          <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-6">
-            <AlertCircle className="w-8 h-8 text-destructive" />
+          <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mb-6">
+            <AlertCircle className="w-7 h-7 text-destructive" />
           </div>
-          <h1 className="font-serif text-2xl text-foreground mb-4">
-            {invitationState === "expired" ? "Invitation expirée" : "Invitation invalide"}
+
+          <h1 id="accept-invitation-title" className="font-serif text-2xl text-foreground">
+            {t.acceptInvitation.title}
           </h1>
-          <p className="text-muted-foreground mb-8">
-            {errorMessage}
-          </p>
-          <Link to="/connexion">
-            <Button variant="outline">
-              Retour à la connexion
-            </Button>
-          </Link>
-        </motion.div>
-      </div>
+          <p className="text-muted-foreground mt-3">{errorMessage}</p>
+
+          <div className="mt-8">
+            <Link to="/connexion">
+              <Button variant="outline">{t.nav.login}</Button>
+            </Link>
+          </div>
+        </motion.section>
+      </main>
     );
   }
 
-  // Already confirmed state
-  if (invitationState === "already_confirmed") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-md text-center"
-        >
-          <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-8 h-8 text-green-500" />
-          </div>
-          <h1 className="font-serif text-2xl text-foreground mb-4">
-            Compte déjà activé
-          </h1>
-          <p className="text-muted-foreground mb-4">
-            Votre compte est déjà configuré. Redirection en cours...
-          </p>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // Valid invitation - show password form
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left Panel - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 md:p-16">
+    <main className="min-h-screen bg-background flex">
+      <section className="w-full lg:w-1/2 flex items-center justify-center p-8 md:p-16">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.7 }}
           className="w-full max-w-md"
         >
-          {/* Logo */}
-          <Link to="/" className="block mb-16">
-            <h1 className="font-serif text-2xl text-foreground">
-              Cercle Partages
-            </h1>
+          <Link to="/" className="block mb-14" aria-label="Cercle Partages">
+            <span className="font-serif text-2xl text-foreground">Cercle Partages</span>
           </Link>
 
-          {/* Title */}
-          <div className="mb-12">
-            <h2 className="font-serif text-2xl text-foreground mb-2">
-              Finaliser votre inscription
-            </h2>
-            <p className="text-muted-foreground text-sm">
-              {userEmail 
-                ? `Bienvenue ! Définissez votre mot de passe pour ${userEmail}`
-                : "Définissez votre mot de passe pour accéder au Cercle Partages"
-              }
+          <header className="mb-10">
+            <h1 className="font-serif text-2xl text-foreground">{t.acceptInvitation.title}</h1>
+            <p className="text-muted-foreground text-sm mt-2">
+              {userEmail ? t.acceptInvitation.subtitleWithEmail.replace("{email}", userEmail) : t.acceptInvitation.subtitle}
             </p>
-          </div>
+          </header>
 
-          {/* Password Form */}
-          <motion.form
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4 }}
-            className="space-y-6"
-            onSubmit={handleSubmit}
-          >
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <Label htmlFor="password" className="font-sans text-sm">
-                Mot de passe
+                {t.auth.password}
               </Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Minimum 8 caractères"
+                  placeholder={t.acceptInvitation.passwordPlaceholder}
                   className="h-12 bg-transparent border-border focus:border-foreground pr-12"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={8}
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowPassword((v) => !v)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={showPassword ? t.acceptInvitation.hidePassword : t.acceptInvitation.showPassword}
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -301,71 +238,69 @@ const AcceptInvitation = () => {
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword" className="font-sans text-sm">
-                Confirmer le mot de passe
+                {t.auth.confirmPassword}
               </Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirmez votre mot de passe"
+                  placeholder={t.acceptInvitation.confirmPasswordPlaceholder}
                   className="h-12 bg-transparent border-border focus:border-foreground pr-12"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   minLength={8}
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  onClick={() => setShowConfirmPassword((v) => !v)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={showConfirmPassword ? t.acceptInvitation.hidePassword : t.acceptInvitation.showPassword}
                 >
                   {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
             </div>
 
-            <Button 
-              variant="nightBlue" 
-              size="lg" 
+            <Button
+              variant="nightBlue"
+              size="lg"
               className="w-full mt-8"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Création en cours..." : "Rejoindre le Cercle"}
+              {isSubmitting ? t.common.loading : t.acceptInvitation.submit}
             </Button>
+          </form>
 
-            <p className="text-center text-sm text-muted-foreground mt-6">
-              Déjà un compte ?{" "}
-              <Link to="/connexion" className="hover:text-foreground transition-colors underline">
-                Se connecter
-              </Link>
-            </p>
-          </motion.form>
+          <p className="text-center text-sm text-muted-foreground mt-6">
+            {t.acceptInvitation.haveAccount}{" "}
+            <Link to="/connexion" className="hover:text-foreground transition-colors underline">
+              {t.nav.login}
+            </Link>
+          </p>
         </motion.div>
-      </div>
+      </section>
 
-      {/* Right Panel - Visual */}
-      <div className="hidden lg:block lg:w-1/2 bg-night-blue relative overflow-hidden">
+      <aside className="hidden lg:block lg:w-1/2 bg-night-blue relative overflow-hidden">
         <div className="absolute inset-0 flex items-center justify-center p-16">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 0.5 }}
+            transition={{ duration: 1, delay: 0.4 }}
             className="text-center"
           >
             <p className="font-serif text-5xl text-primary-foreground leading-tight mb-8">
-              Bienvenue au Cercle
+              {t.hero.slogan}
             </p>
             <p className="font-sans text-primary-foreground/70 text-lg max-w-md mx-auto">
-              Rejoignez notre communauté d'esprits curieux pour des échanges enrichissants.
+              {t.hero.description}
             </p>
           </motion.div>
         </div>
-        {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-96 h-96 border border-primary-foreground/10 rounded-full translate-x-1/2 -translate-y-1/2" />
         <div className="absolute bottom-0 left-0 w-64 h-64 border border-primary-foreground/10 rounded-full -translate-x-1/2 translate-y-1/2" />
-      </div>
-    </div>
+      </aside>
+    </main>
   );
-};
-
-export default AcceptInvitation;
+}
