@@ -13,6 +13,7 @@ import Events from "./pages/Events";
 import Presenters from "./pages/Presenters";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import AcceptInvitation from "./pages/AcceptInvitation";
 import PresenterProfile from "./pages/PresenterProfile";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -30,8 +31,9 @@ function App() {
             <BrowserRouter>
               <ScrollToTop />
               <Routes>
-                <Route path="/connexion" element={<Login />} />
+              <Route path="/connexion" element={<Login />} />
                 <Route path="/inscription" element={<Signup />} />
+                <Route path="/accept-invitation" element={<AcceptInvitation />} />
                 <Route
                   path="/"
                   element={

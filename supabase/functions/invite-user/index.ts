@@ -71,9 +71,9 @@ serve(async (req) => {
     // Get the site URL for redirect
     const siteUrl = Deno.env.get("SITE_URL") || "https://mprqsjlwfdjdnbgamfiu.lovableproject.com";
     
-    // Invite user using Supabase Admin API with redirect to signup page
+    // Invite user using Supabase Admin API with redirect to accept-invitation page
     const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${siteUrl}/inscription`,
+      redirectTo: `${siteUrl}/accept-invitation`,
       data: {
         role: role || "participant",
       },
