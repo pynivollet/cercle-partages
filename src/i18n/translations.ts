@@ -61,6 +61,7 @@ export const translations = {
         passwordMismatch: "Les mots de passe ne correspondent pas.",
         passwordTooShort: "Le mot de passe doit contenir au moins 8 caractères.",
         updateFailed: "Impossible de définir le mot de passe. Veuillez réessayer.",
+        nameRequired: "Le prénom et le nom sont requis.",
       },
     },
     // Hero
@@ -285,6 +286,7 @@ export const translations = {
         passwordMismatch: "Passwords do not match.",
         passwordTooShort: "Password must be at least 8 characters.",
         updateFailed: "Could not set password. Please try again.",
+        nameRequired: "First name and last name are required.",
       },
     },
     // Hero
