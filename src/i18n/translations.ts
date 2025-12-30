@@ -175,6 +175,18 @@ export const translations = {
       presentations: "Présentations",
       noPresentations: "Aucune présentation",
     },
+    // Profile
+    profile: {
+      title: "Mon profil",
+      personalInfo: "Informations personnelles",
+      changePassword: "Changer le mot de passe",
+      currentPassword: "Mot de passe actuel",
+      newPassword: "Nouveau mot de passe",
+      updatePassword: "Modifier le mot de passe",
+      profileUpdated: "Profil mis à jour",
+      passwordUpdated: "Mot de passe modifié",
+      saved: "Enregistré",
+    },
     // Common
     common: {
       loading: "Chargement...",
@@ -398,6 +410,18 @@ export const translations = {
       presenterUpdated: "Presenter updated",
       presentations: "Presentations",
       noPresentations: "No presentations",
+    },
+    // Profile
+    profile: {
+      title: "My Profile",
+      personalInfo: "Personal Information",
+      changePassword: "Change Password",
+      currentPassword: "Current password",
+      newPassword: "New password",
+      updatePassword: "Update password",
+      profileUpdated: "Profile updated",
+      passwordUpdated: "Password updated",
+      saved: "Saved",
     },
     // Common
     common: {
