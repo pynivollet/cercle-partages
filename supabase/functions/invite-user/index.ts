@@ -73,7 +73,7 @@ serve(async (req) => {
 
     // Get the site URL for redirect
     const siteUrl = Deno.env.get("SITE_URL");
-    console.debug("Site URL to redirect:", siteUrl);
+    console.log("Site URL to redirect:", siteUrl);
 
     // Invite user using Supabase Admin API with redirect to signup page
     const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
