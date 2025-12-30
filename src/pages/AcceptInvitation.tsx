@@ -164,11 +164,13 @@ export default function AcceptInvitation() {
         return;
       }
 
-      // 2) Upsert profile in profiles table
+      // 2) Upsert profile in profiles table with first_name and last_name
       const { error: profileError } = await supabase
         .from("profiles")
         .upsert({
           id: user.id,
+          first_name: firstName,
+          last_name: lastName,
           full_name: `${firstName} ${lastName}`.trim(),
         }, { onConflict: "id" });
 
