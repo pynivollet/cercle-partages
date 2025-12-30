@@ -13,6 +13,8 @@ import { useLanguage } from "@/i18n/LanguageContext";
 
 const formSchema = z
   .object({
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
   })
@@ -34,6 +36,8 @@ export default function AcceptInvitation() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -121,23 +125,56 @@ export default function AcceptInvitation() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const result = formSchema.safeParse({ password, confirmPassword });
+    const result = formSchema.safeParse({ firstName, lastName, password, confirmPassword });
     if (!result.success) {
       const firstIssue = result.error.issues[0];
-      const msg =
-        firstIssue.path?.[0] === "confirmPassword"
-          ? t.acceptInvitation.errors.passwordMismatch
-          : t.acceptInvitation.errors.passwordTooShort;
+      let msg: string = t.acceptInvitation.errors.generic;
+      if (firstIssue.path?.[0] === "confirmPassword") {
+        msg = t.acceptInvitation.errors.passwordMismatch;
+      } else if (firstIssue.path?.[0] === "password") {
+        msg = t.acceptInvitation.errors.passwordTooShort;
+      } else if (firstIssue.path?.[0] === "firstName" || firstIssue.path?.[0] === "lastName") {
+        msg = t.acceptInvitation.errors.nameRequired;
+      }
       toast.error(msg);
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error(t.acceptInvitation.errors.generic);
+        return;
+      }
+
+      // 1) Update password and user_metadata
+      const { error: updateError } = await supabase.auth.updateUser({
+        password,
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          full_name: `${firstName} ${lastName}`.trim(),
+        },
+      });
+
+      if (updateError) {
         toast.error(t.acceptInvitation.errors.updateFailed);
         return;
+      }
+
+      // 2) Upsert profile in profiles table
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          full_name: `${firstName} ${lastName}`.trim(),
+        }, { onConflict: "id" });
+
+      if (profileError) {
+        console.error("Profile upsert error:", profileError);
+        // Non-blocking - user is still authenticated
       }
 
       toast.success(t.acceptInvitation.success);
@@ -208,7 +245,39 @@ export default function AcceptInvitation() {
             </p>
           </header>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="font-sans text-sm">
+                  {t.auth.firstName}
+                </Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  placeholder={t.auth.firstName}
+                  className="h-12 bg-transparent border-border focus:border-foreground"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  autoComplete="given-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="font-sans text-sm">
+                  {t.auth.lastName}
+                </Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  placeholder={t.auth.lastName}
+                  className="h-12 bg-transparent border-border focus:border-foreground"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  autoComplete="family-name"
+                />
+              </div>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="font-sans text-sm">
                 {t.auth.password}
