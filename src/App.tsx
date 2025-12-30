@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import AcceptInvitation from "./pages/AcceptInvitation";
 import PresenterProfile from "./pages/PresenterProfile";
+import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -71,6 +72,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <PresenterProfile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/profil"
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
                     </ProtectedRoute>
                   }
                 />

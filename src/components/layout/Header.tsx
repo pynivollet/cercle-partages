@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { Globe, Menu, X } from "lucide-react";
+import { Globe, Menu, X, UserCircle } from "lucide-react";
 
 const Header = () => {
   const location = useLocation();
@@ -102,16 +102,25 @@ const Header = () => {
             </button>
 
             {/* Desktop Auth */}
-            <div className="hidden md:block">
+            <div className="hidden md:flex items-center gap-2">
               {user ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="text-sm font-sans text-muted-foreground hover:text-foreground"
-                >
-                  {t.nav.logout}
-                </Button>
+                <>
+                  <Link
+                    to="/profil"
+                    className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+                    title={t.nav.profile}
+                  >
+                    <UserCircle className="w-5 h-5" />
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleLogout}
+                    className="text-sm font-sans text-muted-foreground hover:text-foreground"
+                  >
+                    {t.nav.logout}
+                  </Button>
+                </>
               ) : (
                 <Link
                   to="/connexion"
@@ -178,12 +187,21 @@ const Header = () => {
                 )}
                 <li className="pt-2 border-t border-border/50">
                   {user ? (
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left py-2 text-sm font-sans text-muted-foreground"
-                    >
-                      {t.nav.logout}
-                    </button>
+                    <>
+                      <Link
+                        to="/profil"
+                        onClick={closeMobileMenu}
+                        className="block py-2 text-sm font-sans text-muted-foreground"
+                      >
+                        {t.nav.profile}
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left py-2 text-sm font-sans text-muted-foreground"
+                      >
+                        {t.nav.logout}
+                      </button>
+                    </>
                   ) : (
                     <Link
                       to="/connexion"
