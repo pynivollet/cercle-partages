@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import { getPresenters } from "@/services/profiles";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Database } from "@/integrations/supabase/types";
+import { getProfileDisplayName, getProfileInitials } from "@/lib/profileName";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -24,10 +25,8 @@ const Presenters = () => {
     fetchPresenters();
   }, []);
 
-  const getInitials = (profile: Profile) => {
-    const name = profile.full_name || "";
-    return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
-  };
+  const getInitials = (profile: Profile) => getProfileInitials(profile);
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -81,7 +80,7 @@ const Presenters = () => {
                           {presenter.avatar_url ? (
                             <img
                               src={presenter.avatar_url}
-                              alt={presenter.full_name || ""}
+                              alt={getProfileDisplayName(presenter)}
                               className="w-full h-full object-cover"
                             />
                           ) : (
@@ -94,7 +93,7 @@ const Presenters = () => {
                         {/* Info */}
                         <div className="flex-1 min-w-0">
                           <h3 className="font-serif text-xl text-foreground group-hover:text-primary transition-colors">
-                            {presenter.full_name || "Sans nom"}
+                            {getProfileDisplayName(presenter)}
                           </h3>
                         </div>
                       </div>

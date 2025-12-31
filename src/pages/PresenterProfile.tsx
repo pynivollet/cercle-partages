@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { getProfileDisplayName, getProfileInitials } from "@/lib/profileName";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -50,14 +51,10 @@ const PresenterProfile = () => {
     fetchData();
   }, [id]);
 
-  const getPresenterName = () => {
-    return profile?.full_name || "Intervenant";
-  };
+  const getPresenterName = () => getProfileDisplayName(profile);
 
-  const getInitials = () => {
-    const name = profile?.full_name || "";
-    return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
-  };
+  const getInitials = () => getProfileInitials(profile);
+
 
   const formatPresentationDate = (dateString: string) => {
     return format(new Date(dateString), "dd MMMM yyyy", { locale: fr });

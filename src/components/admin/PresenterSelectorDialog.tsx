@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Users, X, Search } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
+import { getProfileDisplayName } from "@/lib/profileName";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -32,8 +33,8 @@ const PresenterSelectorDialog = ({
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredPresenters = presenters.filter((presenter) => {
-    const fullName = presenter.full_name?.toLowerCase() || "";
-    return fullName.includes(searchQuery.toLowerCase());
+    const name = getProfileDisplayName(presenter).toLowerCase();
+    return name.includes(searchQuery.toLowerCase());
   });
 
   const selectedPresenters = presenters.filter((p) => selectedIds.includes(p.id));
@@ -57,7 +58,7 @@ const PresenterSelectorDialog = ({
         <div className="flex flex-wrap gap-2 mb-2">
           {selectedPresenters.map((presenter) => (
             <Badge key={presenter.id} variant="secondary" className="flex items-center gap-1 pr-1">
-              {presenter.full_name}
+              {getProfileDisplayName(presenter)}
               <button
                 type="button"
                 onClick={() => handleRemovePresenter(presenter.id)}
@@ -121,7 +122,7 @@ const PresenterSelectorDialog = ({
                         className="flex-1 cursor-pointer"
                       >
                         <div className="font-medium text-sm">
-                          {presenter.full_name || "Sans nom"}
+                          {getProfileDisplayName(presenter)}
                         </div>
                         {presenter.bio && (
                           <div className="text-xs text-muted-foreground line-clamp-1">

@@ -28,6 +28,7 @@ import { Plus, Pencil, Upload, User, Calendar, Trash2 } from "lucide-react";
 import { updateProfile, uploadPresenterAvatar, deletePresenter } from "@/services/profiles";
 import { getPresentationsByPresenter } from "@/services/presentations";
 import { Link } from "react-router-dom";
+import { getProfileDisplayName, getProfileInitials } from "@/lib/profileName";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type Presentation = Database["public"]["Tables"]["presentations"]["Row"];
@@ -44,7 +45,8 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
   // Edit presenter state
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingPresenter, setEditingPresenter] = useState<Profile | null>(null);
-  const [editFullName, setEditFullName] = useState("");
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
   const [editBio, setEditBio] = useState("");
   const [editPhotoFile, setEditPhotoFile] = useState<File | null>(null);
   const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null);
@@ -69,7 +71,8 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
 
   const handleEditPresenter = (presenter: Profile) => {
     setEditingPresenter(presenter);
-    setEditFullName(presenter.full_name || "");
+    setEditFirstName(presenter.first_name || "");
+    setEditLastName(presenter.last_name || "");
     setEditBio(presenter.bio || "");
     setEditPhotoPreview(presenter.avatar_url);
     setEditPhotoFile(null);
@@ -91,7 +94,8 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
     }
 
     const { error } = await updateProfile(editingPresenter.id, {
-      full_name: editFullName,
+      first_name: editFirstName,
+      last_name: editLastName,
       bio: editBio || null,
       avatar_url: avatarUrl,
     });
@@ -197,14 +201,14 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
                           {profile.avatar_url ? (
                             <img
                               src={profile.avatar_url}
-                              alt={profile.full_name || ""}
+                              alt={getProfileDisplayName(profile)}
                               className="w-full h-full object-cover"
                             />
                           ) : (
                             <User className="w-5 h-5 text-muted-foreground" />
                           )}
                         </div>
-                        <span className="font-medium">{profile.full_name || "Sans nom"}</span>
+                        <span className="font-medium">{getProfileDisplayName(profile)}</span>
                       </div>
                       <Button
                         variant="outline"
@@ -255,12 +259,15 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Nom complet</Label>
-              <Input
-                value={editFullName}
-                onChange={(e) => setEditFullName(e.target.value)}
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Prénom</Label>
+                <Input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Nom</Label>
+                <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -289,7 +296,7 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {t.admin.presentations} - {viewingPresentations?.full_name}
+              {t.admin.presentations} - {getProfileDisplayName(viewingPresentations)}
             </DialogTitle>
           </DialogHeader>
           <div className="mt-4">
@@ -323,7 +330,7 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer l'intervenant ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer {presenterToDelete?.full_name} de la liste des intervenants ? 
+              Êtes-vous sûr de vouloir supprimer {getProfileDisplayName(presenterToDelete)} de la liste des intervenants ? 
               Cette action retirera le statut d'intervenant mais conservera le profil.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -355,12 +362,12 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
                   {presenter.avatar_url ? (
                     <img
                       src={presenter.avatar_url}
-                      alt={presenter.full_name || ""}
+                      alt={getProfileDisplayName(presenter)}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <span className="text-sm font-serif text-muted-foreground">
-                      {presenter.full_name?.split(" ").map(n => n[0]).join("") || "?"}
+                      {getProfileInitials(presenter)}
                     </span>
                   )}
                 </div>
@@ -369,7 +376,7 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
                     to={`/presentateur/${presenter.id}`}
                     className="font-serif text-lg hover:text-primary transition-colors"
                   >
-                    {presenter.full_name || "Sans nom"}
+                    {getProfileDisplayName(presenter)}
                   </Link>
                   <p className="text-sm text-muted-foreground">
                     {presenter.bio?.slice(0, 60) || "Aucune bio"}

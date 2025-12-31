@@ -64,7 +64,9 @@ const Events = () => {
 
   const getPresenterName = (presenter: EventWithPresenter["presenter"]) => {
     if (!presenter) return "";
-    return presenter.full_name || "";
+    const first = (presenter.first_name ?? "").trim();
+    const last = (presenter.last_name ?? "").trim();
+    return `${first} ${last}`.trim();
   };
 
   const filteredAndSortedEvents = useMemo(() => {
@@ -304,7 +306,7 @@ const Events = () => {
                           </h3>
                           {event.presenter && (
                             <p className="text-sm text-muted-foreground mt-1">
-                              {event.presenter.full_name}
+                              {getPresenterName(event.presenter)}
                             </p>
                           )}
                         </div>
