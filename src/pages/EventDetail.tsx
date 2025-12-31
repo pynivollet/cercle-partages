@@ -21,6 +21,7 @@ import { fr } from "date-fns/locale";
 import { toast } from "sonner";
 import { FileText, Users } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
+import { getProfileDisplayName, getProfileInitials } from "@/lib/profileName";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -108,14 +109,10 @@ const EventDetail = () => {
     return format(new Date(dateString), "HH'h'mm", { locale: fr });
   };
 
-  const getPresenterName = (presenter: Profile) => {
-    return presenter.full_name || "Intervenant";
-  };
+  const getPresenterName = (presenter: Profile) => getProfileDisplayName(presenter);
 
-  const getInitials = (presenter: Profile) => {
-    const name = presenter.full_name || "";
-    return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
-  };
+  const getInitials = (presenter: Profile) => getProfileInitials(presenter);
+
 
   if (loading) {
     return (

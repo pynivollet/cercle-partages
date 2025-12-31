@@ -9,7 +9,8 @@ type EventRegistration = Database["public"]["Tables"]["event_registrations"]["Ro
 export interface EventWithPresenter extends Event {
   presenter?: {
     id: string;
-    full_name: string | null;
+    first_name: string | null;
+    last_name: string | null;
     bio: string | null;
     avatar_url: string | null;
   } | null;
@@ -24,7 +25,8 @@ export const getPublishedEvents = async (): Promise<{ data: EventWithPresenter[]
       *,
       presenter:profiles!events_presenter_id_fkey(
         id,
-        full_name,
+        first_name,
+        last_name,
         bio,
         avatar_url
       )
@@ -42,7 +44,8 @@ export const getUpcomingEvents = async (): Promise<{ data: EventWithPresenter[] 
       *,
       presenter:profiles!events_presenter_id_fkey(
         id,
-        full_name,
+        first_name,
+        last_name,
         bio,
         avatar_url
       )
@@ -61,7 +64,8 @@ export const getPastEvents = async (): Promise<{ data: EventWithPresenter[] | nu
       *,
       presenter:profiles!events_presenter_id_fkey(
         id,
-        full_name,
+        first_name,
+        last_name,
         bio,
         avatar_url
       )
@@ -79,7 +83,8 @@ export const getEventById = async (id: string, userId?: string): Promise<{ data:
       *,
       presenter:profiles!events_presenter_id_fkey(
         id,
-        full_name,
+        first_name,
+        last_name,
         bio,
         avatar_url
       )

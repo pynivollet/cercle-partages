@@ -10,21 +10,25 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 
-const signupSchema = z.object({
-  fullName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
-  password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Les mots de passe ne correspondent pas",
-  path: ["confirmPassword"],
-});
+const signupSchema = z
+  .object({
+    firstName: z.string().min(1, "Le prénom est requis"),
+    lastName: z.string().min(1, "Le nom est requis"),
+    password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Les mots de passe ne correspondent pas",
+    path: ["confirmPassword"],
+  });
 
 const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { t } = useLanguage();
 
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -84,7 +88,7 @@ const Signup = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validation = signupSchema.safeParse({ fullName, password, confirmPassword });
+    const validation = signupSchema.safeParse({ firstName, lastName, password, confirmPassword });
     if (!validation.success) {
       const firstError = validation.error.errors[0];
       toast.error(firstError.message);
@@ -100,11 +104,12 @@ const Signup = () => {
     try {
       // Session should already be set from useEffect
 
-      // Update the user's password
+      // Update the user's password + metadata
       const { error: updateError } = await supabase.auth.updateUser({
         password: password,
         data: {
-          full_name: fullName,
+          first_name: firstName,
+          last_name: lastName,
         },
       });
 
@@ -114,13 +119,19 @@ const Signup = () => {
         return;
       }
 
-      // Update the profile with the full name
+      // Upsert profile (row may not exist)
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await supabase
           .from("profiles")
-          .update({ full_name: fullName })
-          .eq("id", user.id);
+          .upsert(
+            {
+              id: user.id,
+              first_name: firstName,
+              last_name: lastName,
+            },
+            { onConflict: "id" }
+          );
       }
 
       toast.success(t.auth.accountCreated);
@@ -168,19 +179,37 @@ const Signup = () => {
             className="space-y-6"
             onSubmit={handleSignup}
           >
-            <div className="space-y-2">
-              <Label htmlFor="fullName" className="font-sans text-sm">
-                Nom complet
-              </Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder="Jean Dupont"
-                className="h-12 bg-transparent border-border focus:border-foreground"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="font-sans text-sm">
+                  Prénom
+                </Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  placeholder="Jean"
+                  className="h-12 bg-transparent border-border focus:border-foreground"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  autoComplete="given-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="font-sans text-sm">
+                  Nom
+                </Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  placeholder="Dupont"
+                  className="h-12 bg-transparent border-border focus:border-foreground"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  autoComplete="family-name"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">

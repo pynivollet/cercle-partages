@@ -373,10 +373,7 @@ const Admin = () => {
 
               <div className="py-12 text-center border border-border/50 rounded-lg bg-muted/20">
                 <Mail className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">
-                  Les invitations sont maintenant gérées via Supabase Auth.
-                </p>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-sm text-muted-foreground">
                   Cliquez sur "Créer une invitation" pour inviter un nouvel utilisateur par email.
                 </p>
               </div>

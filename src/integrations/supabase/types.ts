@@ -245,7 +245,6 @@ export type Database = {
           bio: string | null
           created_at: string
           first_name: string | null
-          full_name: string | null
           id: string
           is_presenter: boolean | null
           last_name: string | null
@@ -256,7 +255,6 @@ export type Database = {
           bio?: string | null
           created_at?: string
           first_name?: string | null
-          full_name?: string | null
           id: string
           is_presenter?: boolean | null
           last_name?: string | null
@@ -267,7 +265,6 @@ export type Database = {
           bio?: string | null
           created_at?: string
           first_name?: string | null
-          full_name?: string | null
           id?: string
           is_presenter?: boolean | null
           last_name?: string | null

@@ -6,7 +6,8 @@ type Presentation = Database["public"]["Tables"]["presentations"]["Row"];
 export interface PresentationWithPresenter extends Presentation {
   presenter?: {
     id: string;
-    full_name: string | null;
+    first_name: string | null;
+    last_name: string | null;
     bio: string | null;
     avatar_url: string | null;
   } | null;
@@ -19,7 +20,8 @@ export const getPresentations = async (): Promise<{ data: PresentationWithPresen
       *,
       presenter:profiles!presentations_presenter_id_fkey(
         id,
-        full_name,
+        first_name,
+        last_name,
         bio,
         avatar_url
       )
@@ -36,7 +38,8 @@ export const getPresentationById = async (id: string): Promise<{ data: Presentat
       *,
       presenter:profiles!presentations_presenter_id_fkey(
         id,
-        full_name,
+        first_name,
+        last_name,
         bio,
         avatar_url
       )

@@ -26,23 +26,10 @@ const Profile = () => {
   const [profileSuccess, setProfileSuccess] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
 
-  // Use first_name and last_name from profile, fallback to parsing full_name
-  const getInitialNames = () => {
-    if (profile?.first_name || profile?.last_name) {
-      return {
-        firstName: profile.first_name || "",
-        lastName: profile.last_name || "",
-      };
-    }
-    // Fallback: parse full_name for old profiles
-    if (!profile?.full_name) return { firstName: "", lastName: "" };
-    const parts = profile.full_name.trim().split(" ");
-    const firstName = parts[0] || "";
-    const lastName = parts.slice(1).join(" ") || "";
-    return { firstName, lastName };
+  const { firstName: initialFirstName, lastName: initialLastName } = {
+    firstName: profile?.first_name || "",
+    lastName: profile?.last_name || "",
   };
-
-  const { firstName: initialFirstName, lastName: initialLastName } = getInitialNames();
 
   // Profile form schema
   const profileSchema = z.object({
@@ -82,11 +69,12 @@ const Profile = () => {
     },
   });
 
-  // Update form when profile loads
   useEffect(() => {
     if (profile) {
-      const { firstName, lastName } = getInitialNames();
-      profileForm.reset({ firstName, lastName });
+      profileForm.reset({
+        firstName: profile.first_name || "",
+        lastName: profile.last_name || "",
+      });
     }
   }, [profile, profileForm]);
 
@@ -104,28 +92,27 @@ const Profile = () => {
     setProfileSuccess(false);
 
     try {
-      const fullName = `${data.firstName} ${data.lastName}`.trim();
-
       // Update user metadata
       const { error: metaError } = await supabase.auth.updateUser({
         data: {
           first_name: data.firstName,
           last_name: data.lastName,
-          full_name: fullName,
         },
       });
 
       if (metaError) throw metaError;
 
-      // Update profiles table with first_name, last_name, and full_name
+      // Upsert profiles table (row may not exist yet)
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({
-          first_name: data.firstName,
-          last_name: data.lastName,
-          full_name: fullName,
-        })
-        .eq("id", user.id);
+        .upsert(
+          {
+            id: user.id,
+            first_name: data.firstName,
+            last_name: data.lastName,
+          },
+          { onConflict: "id" }
+        );
 
       if (profileError) throw profileError;
 

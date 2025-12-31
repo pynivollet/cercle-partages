@@ -19,7 +19,8 @@ export const getPresenters = async (): Promise<{ data: Profile[] | null; error: 
     .from("profiles")
     .select("*")
     .eq("is_presenter", true)
-    .order("full_name", { ascending: true });
+    .order("last_name", { ascending: true })
+    .order("first_name", { ascending: true });
 
   return { data, error };
 };
@@ -28,7 +29,8 @@ export const getAllProfiles = async (): Promise<{ data: Profile[] | null; error:
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
-    .order("full_name", { ascending: true });
+    .order("last_name", { ascending: true })
+    .order("first_name", { ascending: true });
 
   return { data, error };
 };
