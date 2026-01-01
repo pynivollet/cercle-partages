@@ -155,7 +155,6 @@ export default function AcceptInvitation() {
         data: {
           first_name: firstName,
           last_name: lastName,
-          full_name: `${firstName} ${lastName}`.trim(),
         },
       });
 
@@ -167,16 +166,19 @@ export default function AcceptInvitation() {
       // 2) Upsert profile in profiles table with first_name and last_name
       const { error: profileError } = await supabase
         .from("profiles")
-        .upsert({
-          id: user.id,
-          first_name: firstName,
-          last_name: lastName,
-          full_name: `${firstName} ${lastName}`.trim(),
-        }, { onConflict: "id" });
+        .upsert(
+          {
+            id: user.id,
+            first_name: firstName,
+            last_name: lastName,
+          },
+          { onConflict: "id" }
+        );
 
       if (profileError) {
         console.error("Profile upsert error:", profileError);
-        // Non-blocking - user is still authenticated
+        toast.error(t.common.error);
+        return;
       }
 
       toast.success(t.acceptInvitation.success);

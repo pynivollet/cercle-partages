@@ -122,7 +122,7 @@ const Signup = () => {
       // Upsert profile (row may not exist)
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase
+        const { error: profileError } = await supabase
           .from("profiles")
           .upsert(
             {
@@ -132,6 +132,12 @@ const Signup = () => {
             },
             { onConflict: "id" }
           );
+
+        if (profileError) {
+          console.error("Profile upsert error:", profileError);
+          toast.error("Erreur lors de la sauvegarde du profil");
+          return;
+        }
       }
 
       toast.success(t.auth.accountCreated);
