@@ -190,7 +190,7 @@ serve(async (req) => {
           </div>
           
           <p style="margin-bottom: 20px;">
-            <a href="https://cerclepartages.org/evenements/${event.id}" 
+            <a href="https://cerclepartages.org/rencontre/${event.id}" 
                style="display: inline-block; background-color: #1a1a1a; color: #ffffff; padding: 12px 24px; text-decoration: none; font-size: 14px;">
               S'inscrire à la rencontre
             </a>
