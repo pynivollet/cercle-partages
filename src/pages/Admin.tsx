@@ -29,10 +29,12 @@ import { getEventPresenters, setEventPresenters } from "@/services/eventPresente
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Copy, Plus, FileText, Pencil, Mail } from "lucide-react";
+import { Plus, FileText, Pencil, Mail, Send, XCircle, CheckCircle } from "lucide-react";
 import PresenterManagement from "@/components/admin/PresenterManagement";
 import EventDocuments from "@/components/admin/EventDocuments";
 import EventForm, { EventFormData, eventToFormData } from "@/components/admin/EventForm";
+import PublishEventDialog from "@/components/admin/PublishEventDialog";
+import CancelEventDialog from "@/components/admin/CancelEventDialog";
 
 type Event = Database["public"]["Tables"]["events"]["Row"];
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -61,6 +63,10 @@ const Admin = () => {
   const [editingEventPresenterIds, setEditingEventPresenterIds] = useState<string[]>([]);
   const [isAddPdfDialogOpen, setIsAddPdfDialogOpen] = useState(false);
   const [newlyCreatedEvent, setNewlyCreatedEvent] = useState<{ event: Event; presenterIds: string[] } | null>(null);
+  
+  // Publish/Cancel dialog state
+  const [publishDialogEvent, setPublishDialogEvent] = useState<Event | null>(null);
+  const [cancelDialogEvent, setCancelDialogEvent] = useState<Event | null>(null);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -203,13 +209,24 @@ const Admin = () => {
     return t.categories[category as keyof typeof t.categories] || category;
   };
 
-  const handleStatusChange = async (eventId: string, newStatus: EventStatus) => {
-    const { error } = await updateEvent(eventId, { status: newStatus });
+  const handleMarkCompleted = async (eventId: string) => {
+    const { error } = await updateEvent(eventId, { status: "completed" });
     if (error) {
       toast.error(t.auth.error);
     } else {
-      setEvents(events.map((e) => (e.id === eventId ? { ...e, status: newStatus } : e)));
+      setEvents(events.map((e) => (e.id === eventId ? { ...e, status: "completed" } : e)));
+      toast.success("Événement marqué comme terminé");
     }
+  };
+
+  const handleEventPublished = () => {
+    setPublishDialogEvent(null);
+    fetchData();
+  };
+
+  const handleEventCancelled = () => {
+    setCancelDialogEvent(null);
+    fetchData();
   };
 
   const getStatusLabel = (status: string) => {
@@ -479,7 +496,17 @@ const Admin = () => {
                     >
                       <div className="flex items-center justify-between py-4 px-4">
                         <div className="flex-1">
-                          <p className="font-serif text-lg">{event.title}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-serif text-lg">{event.title}</p>
+                            <span className={`text-xs px-2 py-0.5 rounded ${
+                              event.status === "draft" ? "bg-muted text-muted-foreground" :
+                              event.status === "published" ? "bg-primary/10 text-primary" :
+                              event.status === "cancelled" ? "bg-destructive/10 text-destructive" :
+                              "bg-muted text-muted-foreground"
+                            }`}>
+                              {getStatusLabel(event.status)}
+                            </span>
+                          </div>
                           <p className="text-sm text-muted-foreground mt-1">
                             {formatDate(event.event_date)} • {event.location || "Lieu à définir"}
                           </p>
@@ -489,28 +516,69 @@ const Admin = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => openEditDialog(event)}
+                            title="Modifier"
                           >
                             <Pencil className="w-4 h-4" />
                           </Button>
-                          <Select
-                            value={event.status}
-                            onValueChange={(v) => handleStatusChange(event.id, v as EventStatus)}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="draft">{t.admin.draft}</SelectItem>
-                              <SelectItem value="published">{t.admin.published}</SelectItem>
-                              <SelectItem value="cancelled">{t.admin.cancelled}</SelectItem>
-                              <SelectItem value="completed">{t.admin.completed}</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          
+                          {event.status === "draft" && (
+                            <Button
+                              variant="nightBlue"
+                              size="sm"
+                              onClick={() => setPublishDialogEvent(event)}
+                            >
+                              <Send className="w-4 h-4 mr-2" />
+                              Publier
+                            </Button>
+                          )}
+                          
+                          {event.status === "published" && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleMarkCompleted(event.id)}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Terminé
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => setCancelDialogEvent(event)}
+                              >
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Annuler
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
+              )}
+
+              {/* Publish Event Dialog */}
+              {publishDialogEvent && (
+                <PublishEventDialog
+                  open={!!publishDialogEvent}
+                  onOpenChange={(open) => !open && setPublishDialogEvent(null)}
+                  eventId={publishDialogEvent.id}
+                  eventTitle={publishDialogEvent.title}
+                  onPublished={handleEventPublished}
+                />
+              )}
+
+              {/* Cancel Event Dialog */}
+              {cancelDialogEvent && (
+                <CancelEventDialog
+                  open={!!cancelDialogEvent}
+                  onOpenChange={(open) => !open && setCancelDialogEvent(null)}
+                  eventId={cancelDialogEvent.id}
+                  eventTitle={cancelDialogEvent.title}
+                  onCancelled={handleEventCancelled}
+                />
               )}
             </motion.div>
           ) : activeTab === "presenters" ? (
