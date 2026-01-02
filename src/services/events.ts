@@ -166,7 +166,7 @@ export const registerForEvent = async (
 
   if (event?.participant_limit) {
     // Get total attendee count via secure RPC function
-    const { data: totalAttendees } = await supabase.rpc("get_event_registration_count", { event_uuid: id });
+    const { data: totalAttendees } = await supabase.rpc("get_event_registration_count", { event_uuid: eventId });
 
     const registrations = totalAttendees ?? 0;
 
