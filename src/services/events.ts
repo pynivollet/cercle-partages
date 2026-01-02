@@ -170,14 +170,7 @@ export const registerForEvent = async (
 
     const registrations = totalAttendees ?? 0;
 
-    const currentTotal =
-      registrations?.reduce((sum, reg) => {
-        // Don't count user's own existing registration (they might be updating)
-        if (reg.user_id === userId) return sum;
-        return sum + (reg.attendee_count || 1);
-      }, 0) ?? 0;
-
-    const remainingCapacity = event.participant_limit - currentTotal;
+    const remainingCapacity = event.participant_limit - registrations;
 
     if (attendeeCount > remainingCapacity) {
       return {
