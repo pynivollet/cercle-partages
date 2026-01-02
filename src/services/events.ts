@@ -96,14 +96,11 @@ export const getEventById = async (id: string, userId?: string): Promise<{ data:
     return { data: null, error };
   }
 
-  // Get total attendee count (sum of attendee_count for confirmed registrations)
-  const { data: registrations } = await supabase
-    .from("event_registrations")
-    .select("attendee_count")
-    .eq("event_id", id)
-    .eq("status", "confirmed");
+  // Get total attendee count via secure RPC function
+  const { data: totalAttendees } = await supabase
+    .rpc("get_event_registration_count", { event_uuid: id });
 
-  const totalAttendees = registrations?.reduce((sum, reg) => sum + (reg.attendee_count || 1), 0) ?? 0;
+  const registrationsCount = totalAttendees ?? 0;
 
   // Get user's registration if logged in
   let userRegistration = null;
@@ -121,7 +118,7 @@ export const getEventById = async (id: string, userId?: string): Promise<{ data:
   return {
     data: {
       ...event,
-      registrations_count: totalAttendees,
+      registrations_count: registrationsCount,
       user_registration: userRegistration,
     },
     error: null,
