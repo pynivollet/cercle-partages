@@ -12,25 +12,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getEventById, EventWithPresenter, registerForEvent, cancelRegistration } from "@/services/events";
+import {
+  getEventById,
+  registerForEvent,
+  cancelRegistration,
+  EventDetails,
+  EventPresenterInfo,
+} from "@/services/events";
 import { getEventDocuments, EventDocument } from "@/services/eventDocuments";
-import { getEventPresenters } from "@/services/eventPresenters";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
 import { FileText, Users } from "lucide-react";
-import { Database } from "@/integrations/supabase/types";
-import { getProfileDisplayName, getProfileInitials } from "@/lib/profileName";
-
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 const EventDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
-  const [event, setEvent] = useState<EventWithPresenter | null>(null);
+  const [event, setEvent] = useState<EventDetails | null>(null);
   const [documents, setDocuments] = useState<EventDocument[]>([]);
-  const [presenters, setPresenters] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
   const [attendeeCount, setAttendeeCount] = useState<string>("1");
@@ -38,19 +38,13 @@ const EventDetail = () => {
   useEffect(() => {
     const fetchEvent = async () => {
       if (!id) return;
-      const { data, error } = await getEventById(id, user?.id);
+
+      // Fetch event details via RPC (includes presenters, registration count, user registration)
+      const { data, error } = await getEventById(id);
+
       if (data && !error) {
         setEvent(data);
-        
-        // Fetch presenters for this event
-        const { data: eventPresenters } = await getEventPresenters(id);
-        if (eventPresenters) {
-          const presenterProfiles = eventPresenters
-            .filter(ep => ep.presenter)
-            .map(ep => ep.presenter as Profile);
-          setPresenters(presenterProfiles);
-        }
-        
+
         // Fetch documents for authenticated users
         if (user) {
           const { data: docs } = await getEventDocuments(id);
@@ -70,7 +64,8 @@ const EventDetail = () => {
     if (!event) return;
 
     setRegistering(true);
-    const { error, capacityError } = await registerForEvent(event.id, user.id, parseInt(attendeeCount));
+    const { error, capacityError } = await registerForEvent(event.id, parseInt(attendeeCount));
+
     if (error) {
       if (capacityError) {
         toast.error(error.message);
@@ -79,8 +74,8 @@ const EventDetail = () => {
       }
     } else {
       toast.success("Inscription confirmée !");
-      // Refresh event data
-      const { data } = await getEventById(event.id, user.id);
+      // Refresh event data via RPC
+      const { data } = await getEventById(event.id);
       if (data) setEvent(data);
     }
     setRegistering(false);
@@ -90,12 +85,14 @@ const EventDetail = () => {
     if (!user || !event) return;
 
     setRegistering(true);
-    const { error } = await cancelRegistration(event.id, user.id);
+    const { error } = await cancelRegistration(event.id);
+
     if (error) {
       toast.error("Erreur lors de l'annulation");
     } else {
       toast.success("Inscription annulée");
-      const { data } = await getEventById(event.id, user.id);
+      // Refresh event data via RPC
+      const { data } = await getEventById(event.id);
       if (data) setEvent(data);
     }
     setRegistering(false);
@@ -109,10 +106,17 @@ const EventDetail = () => {
     return format(new Date(dateString), "HH'h'mm", { locale: fr });
   };
 
-  const getPresenterName = (presenter: Profile) => getProfileDisplayName(presenter);
+  const getPresenterName = (presenter: EventPresenterInfo) => {
+    const firstName = presenter.first_name || "";
+    const lastName = presenter.last_name || "";
+    return `${firstName} ${lastName}`.trim() || "Présentateur";
+  };
 
-  const getInitials = (presenter: Profile) => getProfileInitials(presenter);
-
+  const getInitials = (presenter: EventPresenterInfo) => {
+    const firstName = presenter.first_name || "";
+    const lastName = presenter.last_name || "";
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "?";
+  };
 
   if (loading) {
     return (
@@ -160,6 +164,9 @@ const EventDetail = () => {
   const isRegistered = !!event.user_registration;
   const isPastEvent = new Date(event.event_date) < new Date();
 
+  // Use presenters from RPC response
+  const presenters = event.presenters || [];
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -189,9 +196,7 @@ const EventDetail = () => {
                   {event.topic}
                 </p>
               )}
-              <h1 className="text-headline text-foreground mb-8">
-                {event.title}
-              </h1>
+              <h1 className="text-headline text-foreground mb-8">{event.title}</h1>
 
               {event.description && (
                 <div className="prose prose-lg max-w-none">
@@ -203,9 +208,7 @@ const EventDetail = () => {
 
               <div className="mt-12 pt-8 border-t border-border">
                 <h3 className="font-serif text-xl mb-4">Format</h3>
-                <p className="text-muted-foreground">
-                  Présentation suivie d'un échange et d'un repas partagé
-                </p>
+                <p className="text-muted-foreground">Présentation suivie d'un échange et d'un repas partagé</p>
               </div>
 
               {/* Documents section - only for authenticated users */}
@@ -224,9 +227,7 @@ const EventDetail = () => {
                         <FileText className="w-6 h-6 text-destructive shrink-0" />
                         <div className="min-w-0">
                           <p className="font-medium truncate">{doc.file_name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            PDF • Cliquez pour ouvrir
-                          </p>
+                          <p className="text-xs text-muted-foreground">PDF • Cliquez pour ouvrir</p>
                         </div>
                       </a>
                     ))}
@@ -245,28 +246,18 @@ const EventDetail = () => {
               <div className="sticky top-32 space-y-8">
                 {/* Date & Time */}
                 <div className="p-6 bg-muted/50 border border-border">
-                  <p className="font-sans text-sm text-muted-foreground mb-2">
-                    Date et heure
-                  </p>
+                  <p className="font-sans text-sm text-muted-foreground mb-2">Date et heure</p>
                   <p className="font-serif text-2xl text-foreground capitalize">
                     {formatEventDate(event.event_date)}
                   </p>
-                  <p className="font-sans text-foreground mt-1">
-                    {formatEventTime(event.event_date)}
-                  </p>
+                  <p className="font-sans text-foreground mt-1">{formatEventTime(event.event_date)}</p>
                 </div>
 
                 {/* Location */}
                 <div className="p-6 bg-muted/50 border border-border">
-                  <p className="font-sans text-sm text-muted-foreground mb-2">
-                    Lieu
-                  </p>
-                  <p className="font-serif text-lg text-foreground">
-                    {event.location || "À confirmer"}
-                  </p>
-                  <p className="font-sans text-sm text-muted-foreground mt-1">
-                    Adresse communiquée aux inscrits
-                  </p>
+                  <p className="font-sans text-sm text-muted-foreground mb-2">Lieu</p>
+                  <p className="font-serif text-lg text-foreground">{event.location || "À confirmer"}</p>
+                  <p className="font-sans text-sm text-muted-foreground mt-1">Adresse communiquée aux inscrits</p>
                 </div>
 
                 {/* CTA */}
@@ -277,12 +268,13 @@ const EventDetail = () => {
                         <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
                           <p className="text-sm text-foreground font-medium flex items-center gap-2">
                             <Users className="w-4 h-4" />
-                            Inscrit pour {event.user_registration?.attendee_count || 1} personne{(event.user_registration?.attendee_count || 1) > 1 ? "s" : ""}
+                            Inscrit pour {event.user_registration?.attendee_count || 1} personne
+                            {(event.user_registration?.attendee_count || 1) > 1 ? "s" : ""}
                           </p>
                         </div>
-                        <Button 
-                          variant="outline" 
-                          size="lg" 
+                        <Button
+                          variant="outline"
+                          size="lg"
                           className="w-full"
                           onClick={handleCancelRegistration}
                           disabled={registering}
@@ -308,9 +300,9 @@ const EventDetail = () => {
                             </SelectContent>
                           </Select>
                         </div>
-                        <Button 
-                          variant="nightBlue" 
-                          size="lg" 
+                        <Button
+                          variant="nightBlue"
+                          size="lg"
                           className="w-full"
                           onClick={handleRegister}
                           disabled={registering}
@@ -320,7 +312,7 @@ const EventDetail = () => {
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground text-center">
-                      {event.participant_limit 
+                      {event.participant_limit
                         ? `${event.registrations_count || 0}/${event.participant_limit} inscrits`
                         : "Places limitées • Sur invitation"}
                     </p>
@@ -335,9 +327,7 @@ const EventDetail = () => {
         {presenters.length > 0 && (
           <section className="bg-muted/30 section-padding">
             <div className="editorial-container">
-              <p className="font-sans text-sm tracking-widest uppercase text-muted-foreground mb-8">
-                Présenté par
-              </p>
+              <p className="font-sans text-sm tracking-widest uppercase text-muted-foreground mb-8">Présenté par</p>
               <div className="space-y-16">
                 {presenters.map((presenter, index) => (
                   <motion.div
@@ -359,9 +349,7 @@ const EventDetail = () => {
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                            <span className="text-6xl font-serif">
-                              {getInitials(presenter)}
-                            </span>
+                            <span className="text-6xl font-serif">{getInitials(presenter)}</span>
                           </div>
                         )}
                       </div>
@@ -369,13 +357,9 @@ const EventDetail = () => {
 
                     {/* Bio */}
                     <div className="md:col-span-2">
-                      <h2 className="font-serif text-3xl text-foreground mb-2">
-                        {getPresenterName(presenter)}
-                      </h2>
+                      <h2 className="font-serif text-3xl text-foreground mb-2">{getPresenterName(presenter)}</h2>
                       {presenter.bio && (
-                        <p className="text-lg text-muted-foreground leading-relaxed">
-                          {presenter.bio}
-                        </p>
+                        <p className="text-lg text-muted-foreground leading-relaxed">{presenter.bio}</p>
                       )}
                       <div className="mt-8">
                         <Link
