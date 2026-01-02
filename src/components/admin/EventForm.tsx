@@ -16,8 +16,8 @@ import { Database } from "@/integrations/supabase/types";
 
 type Event = Database["public"]["Tables"]["events"]["Row"];
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
-type EventStatus = Database["public"]["Enums"]["event_status"];
 type EventCategory = Database["public"]["Enums"]["event_category"];
+type EventStatus = Database["public"]["Enums"]["event_status"];
 
 export interface EventFormData {
   title: string;
@@ -163,27 +163,6 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
         onSelectionChange={handleSelectionChange}
         onPresenterCreated={onPresenterCreated}
       />
-      <div className="space-y-2">
-        <Label>Statut</Label>
-        <Select
-          value={status}
-          onValueChange={(v) => setStatus(v as EventStatus)}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="draft">{t.admin.draft}</SelectItem>
-            <SelectItem value="published">{t.admin.published}</SelectItem>
-            {isEdit && (
-              <>
-                <SelectItem value="cancelled">{t.admin.cancelled}</SelectItem>
-                <SelectItem value="completed">{t.admin.completed}</SelectItem>
-              </>
-            )}
-          </SelectContent>
-        </Select>
-      </div>
       <Button
         variant="nightBlue"
         className="w-full"

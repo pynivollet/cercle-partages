@@ -29,7 +29,7 @@ import { getEventPresenters, setEventPresenters } from "@/services/eventPresente
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, FileText, Pencil, Mail, Send, XCircle, CheckCircle } from "lucide-react";
+import { Plus, FileText, Pencil, Mail, Send, XCircle, CheckCircle, Trash2 } from "lucide-react";
 import PresenterManagement from "@/components/admin/PresenterManagement";
 import EventDocuments from "@/components/admin/EventDocuments";
 import EventForm, { EventFormData, eventToFormData } from "@/components/admin/EventForm";
@@ -64,9 +64,11 @@ const Admin = () => {
   const [isAddPdfDialogOpen, setIsAddPdfDialogOpen] = useState(false);
   const [newlyCreatedEvent, setNewlyCreatedEvent] = useState<{ event: Event; presenterIds: string[] } | null>(null);
   
-  // Publish/Cancel dialog state
+  // Publish/Cancel/Delete dialog state
   const [publishDialogEvent, setPublishDialogEvent] = useState<Event | null>(null);
   const [cancelDialogEvent, setCancelDialogEvent] = useState<Event | null>(null);
+  const [deleteDialogEvent, setDeleteDialogEvent] = useState<Event | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -227,6 +229,32 @@ const Admin = () => {
   const handleEventCancelled = () => {
     setCancelDialogEvent(null);
     fetchData();
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!deleteDialogEvent) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("events")
+        .delete()
+        .eq("id", deleteDialogEvent.id);
+      
+      if (error) {
+        toast.error("Erreur lors de la suppression de l'événement");
+        console.error("Delete error:", error);
+      } else {
+        toast.success("Événement supprimé définitivement");
+        setEvents(events.filter((e) => e.id !== deleteDialogEvent.id));
+        setDeleteDialogEvent(null);
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const getStatusLabel = (status: string) => {
@@ -522,14 +550,25 @@ const Admin = () => {
                           </Button>
                           
                           {event.status === "draft" && (
-                            <Button
-                              variant="nightBlue"
-                              size="sm"
-                              onClick={() => setPublishDialogEvent(event)}
-                            >
-                              <Send className="w-4 h-4 mr-2" />
-                              Publier
-                            </Button>
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setDeleteDialogEvent(event)}
+                                title="Supprimer"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="nightBlue"
+                                size="sm"
+                                onClick={() => setPublishDialogEvent(event)}
+                              >
+                                <Send className="w-4 h-4 mr-2" />
+                                Publier
+                              </Button>
+                            </>
                           )}
                           
                           {event.status === "published" && (
@@ -580,6 +619,31 @@ const Admin = () => {
                   onCancelled={handleEventCancelled}
                 />
               )}
+
+              {/* Delete Event Dialog */}
+              <Dialog open={!!deleteDialogEvent} onOpenChange={(open) => !open && setDeleteDialogEvent(null)}>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="text-destructive">Supprimer l'événement</DialogTitle>
+                    <DialogDescription className="pt-2">
+                      Êtes-vous sûr de vouloir supprimer définitivement l'événement "{deleteDialogEvent?.title}" ?
+                      <br /><br />
+                      <span className="text-destructive font-medium">
+                        ⚠️ Cette action est irréversible. Toutes les données associées seront perdues.
+                      </span>
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter className="flex gap-2 sm:gap-0">
+                    <Button variant="outline" onClick={() => setDeleteDialogEvent(null)} disabled={isDeleting}>
+                      Annuler
+                    </Button>
+                    <Button variant="destructive" onClick={handleDeleteEvent} disabled={isDeleting}>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      {isDeleting ? "Suppression..." : "Supprimer définitivement"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </motion.div>
           ) : activeTab === "presenters" ? (
             <PresenterManagement
