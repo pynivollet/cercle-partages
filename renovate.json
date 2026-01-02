@@ -1,6 +1,72 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+
   "extends": [
-    "config:recommended"
+    "config:base"
+  ],
+
+  "timezone": "Europe/Paris",
+
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "📦 Renovate Dependency Dashboard",
+
+  "rangeStrategy": "replace",
+
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+
+  "packageRules": [
+    {
+      "description": "Automerge and group all PATCH updates (safe deps only)",
+      "matchUpdateTypes": ["patch"],
+      "excludePackageNames": [
+        "next",
+        "react",
+        "react-dom",
+        "@supabase/supabase-js",
+        "@supabase/auth-helpers-nextjs",
+        "@supabase/auth-helpers-react",
+        "supabase",
+        "postgrest-js",
+        "gotrue-js",
+        "@vercel/*",
+        "eslint",
+        "typescript"
+      ],
+      "groupName": "all patch dependencies (safe)",
+      "automerge": true,
+      "automergeType": "pr",
+      "labels": ["dependencies", "patch", "automerge"],
+      "stabilityDays": 0
+    },
+    {
+      "description": "Sensitive dependencies – no automerge, even for patch",
+      "matchPackageNames": [
+        "next",
+        "react",
+        "react-dom",
+        "@supabase/supabase-js",
+        "@supabase/auth-helpers-nextjs",
+        "@supabase/auth-helpers-react",
+        "supabase",
+        "postgrest-js",
+        "gotrue-js",
+        "@vercel/*",
+        "eslint",
+        "typescript"
+      ],
+      "automerge": false,
+      "labels": ["dependencies", "sensitive", "needs-review"]
+    },
+    {
+      "description": "Disable automerge for minor and major updates",
+      "matchUpdateTypes": ["minor", "major"],
+      "automerge": false,
+      "labels": ["dependencies", "needs-review"]
+    }
   ]
 }
