@@ -21,7 +21,8 @@ export interface EventWithPresenter extends Event {
 export const getPublishedEvents = async (): Promise<{ data: EventWithPresenter[] | null; error: Error | null }> => {
   const { data, error } = await supabase
     .from("events")
-    .select(`
+    .select(
+      `
       *,
       presenter:profiles!events_presenter_id_fkey(
         id,
@@ -30,7 +31,8 @@ export const getPublishedEvents = async (): Promise<{ data: EventWithPresenter[]
         bio,
         avatar_url
       )
-    `)
+    `,
+    )
     .in("status", ["published", "completed"])
     .order("event_date", { ascending: true });
 
@@ -40,7 +42,8 @@ export const getPublishedEvents = async (): Promise<{ data: EventWithPresenter[]
 export const getUpcomingEvents = async (): Promise<{ data: EventWithPresenter[] | null; error: Error | null }> => {
   const { data, error } = await supabase
     .from("events")
-    .select(`
+    .select(
+      `
       *,
       presenter:profiles!events_presenter_id_fkey(
         id,
@@ -49,7 +52,8 @@ export const getUpcomingEvents = async (): Promise<{ data: EventWithPresenter[] 
         bio,
         avatar_url
       )
-    `)
+    `,
+    )
     .eq("status", "published")
     .gte("event_date", new Date().toISOString())
     .order("event_date", { ascending: true });
@@ -60,7 +64,8 @@ export const getUpcomingEvents = async (): Promise<{ data: EventWithPresenter[] 
 export const getPastEvents = async (): Promise<{ data: EventWithPresenter[] | null; error: Error | null }> => {
   const { data, error } = await supabase
     .from("events")
-    .select(`
+    .select(
+      `
       *,
       presenter:profiles!events_presenter_id_fkey(
         id,
@@ -69,17 +74,22 @@ export const getPastEvents = async (): Promise<{ data: EventWithPresenter[] | nu
         bio,
         avatar_url
       )
-    `)
+    `,
+    )
     .eq("status", "completed")
     .order("event_date", { ascending: false });
 
   return { data, error };
 };
 
-export const getEventById = async (id: string, userId?: string): Promise<{ data: EventWithPresenter | null; error: Error | null }> => {
+export const getEventById = async (
+  id: string,
+  userId?: string,
+): Promise<{ data: EventWithPresenter | null; error: Error | null }> => {
   const { data: event, error } = await supabase
     .from("events")
-    .select(`
+    .select(
+      `
       *,
       presenter:profiles!events_presenter_id_fkey(
         id,
@@ -88,7 +98,8 @@ export const getEventById = async (id: string, userId?: string): Promise<{ data:
         bio,
         avatar_url
       )
-    `)
+    `,
+    )
     .eq("id", id)
     .single();
 
@@ -97,8 +108,7 @@ export const getEventById = async (id: string, userId?: string): Promise<{ data:
   }
 
   // Get total attendee count via secure RPC function
-  const { data: totalAttendees } = await supabase
-    .rpc("get_event_registration_count", { event_uuid: id });
+  const { data: totalAttendees } = await supabase.rpc("get_event_registration_count", { event_uuid: id });
 
   const registrationsCount = totalAttendees ?? 0;
 
@@ -126,64 +136,56 @@ export const getEventById = async (id: string, userId?: string): Promise<{ data:
 };
 
 export const getAllEvents = async (): Promise<{ data: Event[] | null; error: Error | null }> => {
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .order("event_date", { ascending: false });
+  const { data, error } = await supabase.from("events").select("*").order("event_date", { ascending: false });
 
   return { data, error };
 };
 
 export const createEvent = async (event: EventInsert): Promise<{ data: Event | null; error: Error | null }> => {
-  const { data, error } = await supabase
-    .from("events")
-    .insert(event)
-    .select()
-    .single();
+  const { data, error } = await supabase.from("events").insert(event).select().single();
 
   return { data, error };
 };
 
-export const updateEvent = async (id: string, updates: EventUpdate): Promise<{ data: Event | null; error: Error | null }> => {
-  const { data, error } = await supabase
-    .from("events")
-    .update(updates)
-    .eq("id", id)
-    .select()
-    .single();
+export const updateEvent = async (
+  id: string,
+  updates: EventUpdate,
+): Promise<{ data: Event | null; error: Error | null }> => {
+  const { data, error } = await supabase.from("events").update(updates).eq("id", id).select().single();
 
   return { data, error };
 };
 
-export const registerForEvent = async (eventId: string, userId: string, attendeeCount: number = 1): Promise<{ data: EventRegistration | null; error: Error | null; capacityError?: boolean }> => {
+export const registerForEvent = async (
+  eventId: string,
+  userId: string,
+  attendeeCount: number = 1,
+): Promise<{ data: EventRegistration | null; error: Error | null; capacityError?: boolean }> => {
   // First, check current capacity
-  const { data: event } = await supabase
-    .from("events")
-    .select("participant_limit")
-    .eq("id", eventId)
-    .single();
+  const { data: event } = await supabase.from("events").select("participant_limit").eq("id", eventId).single();
 
   if (event?.participant_limit) {
-    // Get current total attendees (excluding cancelled and user's own existing registration)
-    const { data: registrations } = await supabase
-      .from("event_registrations")
-      .select("attendee_count, user_id")
-      .eq("event_id", eventId)
-      .eq("status", "confirmed");
+    // Get total attendee count via secure RPC function
+    const { data: totalAttendees } = await supabase.rpc("get_event_registration_count", { event_uuid: id });
 
-    const currentTotal = registrations?.reduce((sum, reg) => {
-      // Don't count user's own existing registration (they might be updating)
-      if (reg.user_id === userId) return sum;
-      return sum + (reg.attendee_count || 1);
-    }, 0) ?? 0;
+    const registrations = totalAttendees ?? 0;
+
+    const currentTotal =
+      registrations?.reduce((sum, reg) => {
+        // Don't count user's own existing registration (they might be updating)
+        if (reg.user_id === userId) return sum;
+        return sum + (reg.attendee_count || 1);
+      }, 0) ?? 0;
 
     const remainingCapacity = event.participant_limit - currentTotal;
 
     if (attendeeCount > remainingCapacity) {
-      return { 
-        data: null, 
-        error: new Error(`Capacité insuffisante. Il reste ${remainingCapacity} place${remainingCapacity > 1 ? 's' : ''}.`),
-        capacityError: true
+      return {
+        data: null,
+        error: new Error(
+          `Capacité insuffisante. Il reste ${remainingCapacity} place${remainingCapacity > 1 ? "s" : ""}.`,
+        ),
+        capacityError: true,
       };
     }
   }
