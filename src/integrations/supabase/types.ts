@@ -298,10 +298,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancel_event_registration: { Args: { event_uuid: string }; Returns: Json }
+      get_event_details: { Args: { event_uuid: string }; Returns: Json }
+      get_event_presenters: { Args: { event_uuid: string }; Returns: Json }
       get_event_registration_count: {
         Args: { event_uuid: string }
         Returns: number
       }
+      get_past_events: { Args: never; Returns: Json }
+      get_published_events: { Args: never; Returns: Json }
+      get_upcoming_events: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -310,6 +316,10 @@ export type Database = {
         Returns: boolean
       }
       is_authenticated: { Args: never; Returns: boolean }
+      register_for_event: {
+        Args: { attendee_count?: number; event_uuid: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "presenter" | "participant"

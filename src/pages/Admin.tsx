@@ -201,7 +201,8 @@ const Admin = () => {
   const openEditDialog = async (event: Event) => {
     setEditingEvent(event);
     const { data: eventPresenters } = await getEventPresenters(event.id);
-    const presenterIds = eventPresenters?.map(ep => ep.presenter_id) || [];
+    // RPC returns presenter info with 'id' field, not 'presenter_id'
+    const presenterIds = eventPresenters?.map(ep => ep.id) || [];
     setEditingEventPresenterIds(presenterIds);
     setIsEditEventOpen(true);
   };
