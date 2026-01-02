@@ -30,7 +30,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [rolesLoading, setRolesLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
@@ -45,13 +46,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const fetchRoles = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    
-    if (data) {
-      setRoles(data.map((r) => r.role));
+    setRolesLoading(true);
+    try {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      
+      if (data) {
+        setRoles(data.map((r) => r.role));
+      }
+    } finally {
+      setRolesLoading(false);
     }
   };
 
@@ -77,9 +83,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } else {
           setProfile(null);
           setRoles([]);
+          setRolesLoading(false);
         }
         
-        setIsLoading(false);
+        setAuthLoading(false);
       }
     );
 
@@ -91,9 +98,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (existingSession?.user) {
         fetchProfile(existingSession.user.id);
         fetchRoles(existingSession.user.id);
+      } else {
+        setRolesLoading(false);
       }
       
-      setIsLoading(false);
+      setAuthLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -117,6 +126,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const isAdmin = roles.includes("admin");
   const isPresenter = roles.includes("presenter") || (profile?.is_presenter ?? false);
+
+  // Combined loading state: wait for both auth AND roles to be resolved
+  const isLoading = authLoading || (user !== null && rolesLoading);
 
   return (
     <AuthContext.Provider
