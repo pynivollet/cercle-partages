@@ -29,6 +29,8 @@ interface PublishEventDialogProps {
   eventId: string;
   eventTitle: string;
   onPublished: () => void;
+  /** If true, only sends invitations without changing event status */
+  inviteOnly?: boolean;
 }
 
 const PublishEventDialog = ({
@@ -37,6 +39,7 @@ const PublishEventDialog = ({
   eventId,
   eventTitle,
   onPublished,
+  inviteOnly = false,
 }: PublishEventDialogProps) => {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -110,6 +113,7 @@ const PublishEventDialog = ({
             eventId,
             userIds: sendToAll ? [] : selectedUserIds,
             sendToAll,
+            skipStatusUpdate: inviteOnly,
           },
         }
       );
@@ -140,7 +144,7 @@ const PublishEventDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Publier l'événement</DialogTitle>
+          <DialogTitle>{inviteOnly ? "Inviter des membres" : "Publier l'événement"}</DialogTitle>
           <DialogDescription>
             Envoyez une invitation par email aux membres pour "{eventTitle}"
           </DialogDescription>
