@@ -35,6 +35,7 @@ import EventDocuments from "@/components/admin/EventDocuments";
 import EventForm, { EventFormData, eventToFormData } from "@/components/admin/EventForm";
 import PublishEventDialog from "@/components/admin/PublishEventDialog";
 import CancelEventDialog from "@/components/admin/CancelEventDialog";
+import DateChangeDialog from "@/components/admin/DateChangeDialog";
 
 type Event = Database["public"]["Tables"]["events"]["Row"];
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -64,11 +65,17 @@ const Admin = () => {
   const [isAddPdfDialogOpen, setIsAddPdfDialogOpen] = useState(false);
   const [newlyCreatedEvent, setNewlyCreatedEvent] = useState<{ event: Event; presenterIds: string[] } | null>(null);
   
-  // Publish/Cancel/Delete dialog state
+  // Publish/Cancel/Delete/DateChange dialog state
   const [publishDialogEvent, setPublishDialogEvent] = useState<Event | null>(null);
   const [cancelDialogEvent, setCancelDialogEvent] = useState<Event | null>(null);
   const [deleteDialogEvent, setDeleteDialogEvent] = useState<Event | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [dateChangeDialogData, setDateChangeDialogData] = useState<{
+    event: Event;
+    oldDate: string;
+    newDate: string;
+    formData: EventFormData;
+  } | null>(null);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -173,12 +180,35 @@ const Admin = () => {
     if (!editingEvent) return;
     
     const eventDateTime = new Date(`${formData.date}T${formData.time}`);
+    const newDateIso = eventDateTime.toISOString();
     
-    const { data, error } = await updateEvent(editingEvent.id, {
+    // Check if date has changed for published events
+    const oldEventDate = new Date(editingEvent.event_date);
+    const oldDateStr = oldEventDate.toISOString().split("T")[0];
+    const oldTimeStr = oldEventDate.toTimeString().slice(0, 5);
+    const dateHasChanged = formData.date !== oldDateStr || formData.time !== oldTimeStr;
+    
+    if (editingEvent.status === "published" && dateHasChanged) {
+      // Show date change dialog
+      setDateChangeDialogData({
+        event: editingEvent,
+        oldDate: editingEvent.event_date,
+        newDate: newDateIso,
+        formData,
+      });
+      return;
+    }
+    
+    // Proceed with normal update
+    await performEventUpdate(editingEvent.id, formData, newDateIso);
+  };
+
+  const performEventUpdate = async (eventId: string, formData: EventFormData, eventDateIso: string) => {
+    const { data, error } = await updateEvent(eventId, {
       title: formData.title,
       topic: null,
       description: formData.description || null,
-      event_date: eventDateTime.toISOString(),
+      event_date: eventDateIso,
       location: formData.location || null,
       participant_limit: formData.participantLimit ? parseInt(formData.participantLimit) : null,
       presenter_id: formData.presenterIds[0] || null,
@@ -189,13 +219,35 @@ const Admin = () => {
     if (error) {
       toast.error(t.auth.error);
     } else if (data) {
-      await setEventPresenters(editingEvent.id, formData.presenterIds);
+      await setEventPresenters(eventId, formData.presenterIds);
       toast.success("Événement mis à jour");
-      setEvents(events.map((e) => (e.id === editingEvent.id ? data : e)));
+      setEvents(events.map((e) => (e.id === eventId ? data : e)));
       setIsEditEventOpen(false);
       setEditingEvent(null);
       setEditingEventPresenterIds([]);
     }
+  };
+
+  const handleDateChangeConfirm = async () => {
+    if (!dateChangeDialogData) return;
+    
+    await performEventUpdate(
+      dateChangeDialogData.event.id,
+      dateChangeDialogData.formData,
+      dateChangeDialogData.newDate
+    );
+    setDateChangeDialogData(null);
+  };
+
+  const handleDateChangeSkip = async () => {
+    if (!dateChangeDialogData) return;
+    
+    await performEventUpdate(
+      dateChangeDialogData.event.id,
+      dateChangeDialogData.formData,
+      dateChangeDialogData.newDate
+    );
+    setDateChangeDialogData(null);
   };
 
   const openEditDialog = async (event: Event) => {
@@ -645,6 +697,20 @@ const Admin = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+
+              {/* Date Change Dialog */}
+              {dateChangeDialogData && (
+                <DateChangeDialog
+                  open={!!dateChangeDialogData}
+                  onOpenChange={(open) => !open && setDateChangeDialogData(null)}
+                  eventId={dateChangeDialogData.event.id}
+                  eventTitle={dateChangeDialogData.event.title}
+                  oldDate={dateChangeDialogData.oldDate}
+                  newDate={dateChangeDialogData.newDate}
+                  onConfirm={handleDateChangeConfirm}
+                  onSkip={handleDateChangeSkip}
+                />
+              )}
             </motion.div>
           ) : activeTab === "presenters" ? (
             <PresenterManagement
