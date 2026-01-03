@@ -12,6 +12,7 @@ interface SendInvitationsRequest {
   eventId: string;
   userIds: string[];
   sendToAll: boolean;
+  skipStatusUpdate?: boolean;
 }
 
 async function sendEmail(to: string, subject: string, html: string) {
@@ -87,7 +88,7 @@ serve(async (req) => {
       });
     }
 
-    const { eventId, userIds, sendToAll }: SendInvitationsRequest = await req.json();
+    const { eventId, userIds, sendToAll, skipStatusUpdate }: SendInvitationsRequest = await req.json();
 
     if (!eventId) {
       return new Response(JSON.stringify({ error: "Event ID is required" }), {
@@ -223,14 +224,16 @@ serve(async (req) => {
 
     console.log(`Sent ${successCount} emails successfully, ${failCount} failed`);
 
-    // Update event status to published
-    const { error: updateError } = await supabaseAdmin
-      .from("events")
-      .update({ status: "published" })
-      .eq("id", eventId);
+    // Update event status to published (unless skipped for invite-only mode)
+    if (!skipStatusUpdate) {
+      const { error: updateError } = await supabaseAdmin
+        .from("events")
+        .update({ status: "published" })
+        .eq("id", eventId);
 
-    if (updateError) {
-      console.error("Error updating event status:", updateError);
+      if (updateError) {
+        console.error("Error updating event status:", updateError);
+      }
     }
 
     return new Response(

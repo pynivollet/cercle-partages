@@ -29,7 +29,7 @@ import { getEventPresenters, setEventPresenters } from "@/services/eventPresente
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, FileText, Pencil, Mail, Send, XCircle, CheckCircle, Trash2 } from "lucide-react";
+import { Plus, FileText, Pencil, Mail, Send, XCircle, CheckCircle, Trash2, UserPlus } from "lucide-react";
 import PresenterManagement from "@/components/admin/PresenterManagement";
 import EventDocuments from "@/components/admin/EventDocuments";
 import EventForm, { EventFormData, eventToFormData } from "@/components/admin/EventForm";
@@ -65,8 +65,9 @@ const Admin = () => {
   const [isAddPdfDialogOpen, setIsAddPdfDialogOpen] = useState(false);
   const [newlyCreatedEvent, setNewlyCreatedEvent] = useState<{ event: Event; presenterIds: string[] } | null>(null);
   
-  // Publish/Cancel/Delete/DateChange dialog state
+  // Publish/Cancel/Delete/DateChange/Invite dialog state
   const [publishDialogEvent, setPublishDialogEvent] = useState<Event | null>(null);
+  const [inviteDialogEvent, setInviteDialogEvent] = useState<Event | null>(null);
   const [cancelDialogEvent, setCancelDialogEvent] = useState<Event | null>(null);
   const [deleteDialogEvent, setDeleteDialogEvent] = useState<Event | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -627,20 +628,50 @@ const Admin = () => {
                           {event.status === "published" && (
                             <>
                               <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setInviteDialogEvent(event)}
+                                title="Inviter des membres"
+                              >
+                                <UserPlus className="w-4 h-4" />
+                              </Button>
+                              <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleMarkCompleted(event.id)}
+                                title="Marquer comme terminé"
+                                className="hidden sm:inline-flex"
                               >
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Terminé
+                                <CheckCircle className="w-4 h-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Terminé</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleMarkCompleted(event.id)}
+                                title="Marquer comme terminé"
+                                className="sm:hidden"
+                              >
+                                <CheckCircle className="w-4 h-4" />
                               </Button>
                               <Button
                                 variant="destructive"
                                 size="sm"
                                 onClick={() => setCancelDialogEvent(event)}
+                                title="Annuler l'événement"
+                                className="hidden sm:inline-flex"
                               >
-                                <XCircle className="w-4 h-4 mr-2" />
-                                Annuler
+                                <XCircle className="w-4 h-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Annuler</span>
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => setCancelDialogEvent(event)}
+                                title="Annuler l'événement"
+                                className="sm:hidden"
+                              >
+                                <XCircle className="w-4 h-4" />
                               </Button>
                             </>
                           )}
@@ -659,6 +690,21 @@ const Admin = () => {
                   eventId={publishDialogEvent.id}
                   eventTitle={publishDialogEvent.title}
                   onPublished={handleEventPublished}
+                />
+              )}
+
+              {/* Invite Dialog (for already published events) */}
+              {inviteDialogEvent && (
+                <PublishEventDialog
+                  open={!!inviteDialogEvent}
+                  onOpenChange={(open) => !open && setInviteDialogEvent(null)}
+                  eventId={inviteDialogEvent.id}
+                  eventTitle={inviteDialogEvent.title}
+                  onPublished={() => {
+                    setInviteDialogEvent(null);
+                    toast.success("Invitations envoyées");
+                  }}
+                  inviteOnly
                 />
               )}
 
