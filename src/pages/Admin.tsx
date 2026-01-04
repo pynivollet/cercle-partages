@@ -3,8 +3,6 @@ import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -29,8 +27,9 @@ import { getEventPresenters, setEventPresenters } from "@/services/eventPresente
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, FileText, Pencil, Mail, Send, XCircle, CheckCircle, Trash2, UserPlus } from "lucide-react";
+import { Plus, FileText, Pencil, Send, XCircle, CheckCircle, Trash2, UserPlus } from "lucide-react";
 import PresenterManagement from "@/components/admin/PresenterManagement";
+import UserManagement from "@/components/admin/UserManagement";
 import EventDocuments from "@/components/admin/EventDocuments";
 import EventForm, { EventFormData, eventToFormData } from "@/components/admin/EventForm";
 import PublishEventDialog from "@/components/admin/PublishEventDialog";
@@ -39,23 +38,15 @@ import DateChangeDialog from "@/components/admin/DateChangeDialog";
 
 type Event = Database["public"]["Tables"]["events"]["Row"];
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
-type AppRole = Database["public"]["Enums"]["app_role"];
-type EventStatus = Database["public"]["Enums"]["event_status"];
 
 const Admin = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<"invitations" | "events" | "presenters">("invitations");
+  const [activeTab, setActiveTab] = useState<"events" | "presenters" | "users">("events");
   const [events, setEvents] = useState<Event[]>([]);
   const [presenters, setPresenters] = useState<Profile[]>([]);
   const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Invitation form state
-  const [newInviteEmail, setNewInviteEmail] = useState("");
-  const [newInviteRole, setNewInviteRole] = useState<AppRole>("participant");
-  const [isCreateInviteOpen, setIsCreateInviteOpen] = useState(false);
-  const [isInviting, setIsInviting] = useState(false);
 
   // Event dialog state
   const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
@@ -95,40 +86,6 @@ const Admin = () => {
   useEffect(() => {
     fetchData();
   }, []);
-
-  const handleCreateInvitation = async () => {
-    if (!newInviteEmail) {
-      toast.error("Veuillez entrer une adresse email");
-      return;
-    }
-    
-    setIsInviting(true);
-    
-    try {
-      // Use Supabase Admin API via Edge Function to invite user
-      const { data, error } = await supabase.functions.invoke("invite-user", {
-        body: {
-          email: newInviteEmail,
-          role: newInviteRole,
-        },
-      });
-
-      if (error) {
-        console.error("Invitation error:", error);
-        toast.error("Erreur lors de l'envoi de l'invitation");
-      } else {
-        toast.success(`Invitation envoyée à ${newInviteEmail}`);
-        setIsCreateInviteOpen(false);
-        setNewInviteEmail("");
-        setNewInviteRole("participant");
-      }
-    } catch (err) {
-      console.error("Invitation error:", err);
-      toast.error("Erreur lors de l'envoi de l'invitation");
-    } finally {
-      setIsInviting(false);
-    }
-  };
 
   const handleCreateEvent = async (formData: EventFormData) => {
     if (!user) return;
@@ -354,22 +311,6 @@ const Admin = () => {
           {/* Tabs */}
           <div className="flex gap-8 mb-12 border-b border-border">
             <button
-              onClick={() => setActiveTab("invitations")}
-              className={`pb-4 font-sans text-sm transition-colors relative ${
-                activeTab === "invitations"
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {t.admin.invitations}
-              {activeTab === "invitations" && (
-                <motion.div
-                  layoutId="adminTab"
-                  className="absolute bottom-0 left-0 right-0 h-px bg-foreground"
-                />
-              )}
-            </button>
-            <button
               onClick={() => setActiveTab("events")}
               className={`pb-4 font-sans text-sm transition-colors relative ${
                 activeTab === "events"
@@ -401,82 +342,26 @@ const Admin = () => {
                 />
               )}
             </button>
+            <button
+              onClick={() => setActiveTab("users")}
+              className={`pb-4 font-sans text-sm transition-colors relative ${
+                activeTab === "users"
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Utilisateurs
+              {activeTab === "users" && (
+                <motion.div
+                  layoutId="adminTab"
+                  className="absolute bottom-0 left-0 right-0 h-px bg-foreground"
+                />
+              )}
+            </button>
           </div>
 
           {isLoading ? (
             <p className="text-muted-foreground">{t.common.loading}</p>
-          ) : activeTab === "invitations" ? (
-            /* Invitations Tab */
-            <motion.div
-              key="invitations"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.4 }}
-            >
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="font-serif text-xl">{t.admin.invitations}</h2>
-                <Dialog open={isCreateInviteOpen} onOpenChange={setIsCreateInviteOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="nightBlue" size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
-                      {t.admin.createInvitation}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{t.admin.createInvitation}</DialogTitle>
-                      <DialogDescription>
-                        Un email d'invitation sera envoyé à l'adresse indiquée.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 mt-4">
-                      <div className="space-y-2">
-                        <Label>{t.auth.email}</Label>
-                        <Input
-                          type="email"
-                          value={newInviteEmail}
-                          onChange={(e) => setNewInviteEmail(e.target.value)}
-                          placeholder="email@exemple.com"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>{t.admin.role}</Label>
-                        <Select
-                          value={newInviteRole}
-                          onValueChange={(v) => setNewInviteRole(v as AppRole)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="participant">Participant</SelectItem>
-                            <SelectItem value="presenter">Présentateur</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button
-                        variant="nightBlue"
-                        className="w-full"
-                        onClick={handleCreateInvitation}
-                        disabled={isInviting || !newInviteEmail}
-                      >
-                        <Mail className="w-4 h-4 mr-2" />
-                        {isInviting ? "Envoi en cours..." : "Envoyer l'invitation"}
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-
-              <div className="py-12 text-center border border-border/50 rounded-lg bg-muted/20">
-                <Mail className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-sm text-muted-foreground">
-                  Cliquez sur "Créer une invitation" pour inviter un nouvel utilisateur par email.
-                </p>
-              </div>
-            </motion.div>
           ) : activeTab === "events" ? (
             /* Events Tab */
             <motion.div
@@ -764,6 +649,15 @@ const Admin = () => {
               allProfiles={allProfiles}
               onPresentersChange={fetchData}
             />
+          ) : activeTab === "users" ? (
+            <motion.div
+              key="users"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4 }}
+            >
+              <UserManagement />
+            </motion.div>
           ) : null}
         </section>
       </main>
