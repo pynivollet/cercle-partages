@@ -2,13 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -17,14 +11,7 @@ import {
   DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -67,9 +54,20 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
 
   const fetchUsers = async () => {
     setIsLoading(true);
+
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        console.warn("No active session, aborting fetchUsers");
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("get-users");
-      
+
       if (error) {
         console.error("Error fetching users:", error);
         toast.error("Erreur lors du chargement des utilisateurs");
@@ -211,9 +209,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{t.admin.createInvitation}</DialogTitle>
-              <DialogDescription>
-                Un email d'invitation sera envoyé à l'adresse indiquée.
-              </DialogDescription>
+              <DialogDescription>Un email d'invitation sera envoyé à l'adresse indiquée.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 mt-4">
               <div className="space-y-2">
@@ -228,10 +224,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
               </div>
               <div className="space-y-2">
                 <Label>{t.admin.role}</Label>
-                <Select
-                  value={newInviteRole}
-                  onValueChange={(v) => setNewInviteRole(v as AppRole)}
-                >
+                <Select value={newInviteRole} onValueChange={(v) => setNewInviteRole(v as AppRole)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -313,9 +306,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
                           last_name: user.last_name,
                         }) || "—"}
                       </p>
-                      <p className="text-sm text-muted-foreground truncate max-w-[200px]">
-                        {user.email}
-                      </p>
+                      <p className="text-sm text-muted-foreground truncate max-w-[200px]">{user.email}</p>
                       {/* Show role on mobile */}
                       <div className="sm:hidden mt-1 flex flex-wrap gap-1">
                         {user.roles.map((role) => (
@@ -338,9 +329,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
                           {getRoleLabel(role)}
                         </Badge>
                       ))}
-                      {user.is_presenter && (
-                        <Badge variant="secondary">Intervenant</Badge>
-                      )}
+                      {user.is_presenter && <Badge variant="secondary">Intervenant</Badge>}
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
@@ -368,9 +357,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
                         disabled={resendingUserId === user.id}
                         title="Renvoyer l'invitation"
                       >
-                        <RefreshCw
-                          className={`w-4 h-4 ${resendingUserId === user.id ? "animate-spin" : ""}`}
-                        />
+                        <RefreshCw className={`w-4 h-4 ${resendingUserId === user.id ? "animate-spin" : ""}`} />
                         <span className="ml-2 hidden sm:inline">
                           {resendingUserId === user.id ? "Envoi..." : "Renvoyer"}
                         </span>
