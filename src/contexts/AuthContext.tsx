@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
@@ -17,6 +17,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  handleAuthError: (error: unknown) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,6 +25,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 interface AuthProviderProps {
   children: ReactNode;
 }
+
+// Public routes that don't require authentication
+const PUBLIC_ROUTES = ["/connexion", "/inscription", "/accept-invitation"];
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
@@ -34,24 +38,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [rolesLoading, setRolesLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
     
-    if (data) {
-      setProfile(data);
+    if (error) {
+      console.error("Error fetching profile:", error);
+      return;
     }
+    
+    setProfile(data);
   };
 
   const fetchRoles = async (userId: string) => {
     setRolesLoading(true);
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", userId);
+      
+      if (error) {
+        console.error("Error fetching roles:", error);
+        return;
+      }
       
       if (data) {
         setRoles(data.map((r) => r.role));
@@ -61,6 +73,83 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const clearAuthState = useCallback(() => {
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+    setRoles([]);
+  }, []);
+
+  const forceSignOut = useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error("Error during force sign out:", error);
+    }
+    clearAuthState();
+    
+    // Redirect to login if not already on a public route
+    const currentPath = window.location.pathname;
+    if (!PUBLIC_ROUTES.some(route => currentPath.startsWith(route))) {
+      window.location.href = "/connexion";
+    }
+  }, [clearAuthState]);
+
+  // Global error handler for auth-related errors (401, 403, session_not_found)
+  const handleAuthError = useCallback((error: unknown) => {
+    if (error && typeof error === "object") {
+      const err = error as { status?: number; code?: string; message?: string };
+      
+      // Check for session/auth errors
+      if (
+        err.status === 401 ||
+        err.status === 403 ||
+        err.code === "session_not_found" ||
+        err.code === "PGRST301" ||
+        err.message?.includes("JWT") ||
+        err.message?.includes("session") ||
+        err.message?.includes("not authenticated")
+      ) {
+        console.warn("Auth error detected, forcing sign out:", err);
+        forceSignOut();
+      }
+    }
+  }, [forceSignOut]);
+
+  // Validate session
+  const validateSession = useCallback(async () => {
+    try {
+      const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error("Session validation error:", error);
+        await forceSignOut();
+        return null;
+      }
+
+      if (!currentSession) {
+        clearAuthState();
+        return null;
+      }
+
+      // Check if session is expired
+      if (currentSession.expires_at) {
+        const expiresAt = new Date(currentSession.expires_at * 1000);
+        if (expiresAt < new Date()) {
+          console.warn("Session expired, forcing sign out");
+          await forceSignOut();
+          return null;
+        }
+      }
+
+      return currentSession;
+    } catch (error) {
+      console.error("Error validating session:", error);
+      await forceSignOut();
+      return null;
+    }
+  }, [clearAuthState, forceSignOut]);
+
   const refreshProfile = async () => {
     if (user) {
       await Promise.all([fetchProfile(user.id), fetchRoles(user.id)]);
@@ -68,15 +157,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
+        if (!mounted) return;
+
+        if (event === "SIGNED_OUT") {
+          clearAuthState();
+          setAuthLoading(false);
+          setRolesLoading(false);
+          return;
+        }
+
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
         // Defer Supabase calls with setTimeout to prevent deadlock
         if (currentSession?.user) {
           setTimeout(() => {
+            if (!mounted) return;
             fetchProfile(currentSession.user.id);
             fetchRoles(currentSession.user.id);
           }, 0);
@@ -90,22 +191,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
-      setSession(existingSession);
-      setUser(existingSession?.user ?? null);
+    // THEN validate and check for existing session
+    const initializeAuth = async () => {
+      const validSession = await validateSession();
       
-      if (existingSession?.user) {
-        fetchProfile(existingSession.user.id);
-        fetchRoles(existingSession.user.id);
+      if (!mounted) return;
+
+      if (validSession?.user) {
+        setSession(validSession);
+        setUser(validSession.user);
+        await fetchProfile(validSession.user.id);
+        await fetchRoles(validSession.user.id);
       } else {
         setRolesLoading(false);
       }
       
       setAuthLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    // Periodic session validation (every 5 minutes)
+    const validationInterval = setInterval(() => {
+      if (session) {
+        validateSession();
+      }
+    }, 5 * 60 * 1000);
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+      clearInterval(validationInterval);
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -118,10 +235,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setProfile(null);
-    setRoles([]);
+    clearAuthState();
   };
 
   const isAdmin = roles.includes("admin");
@@ -143,6 +257,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         signIn,
         signOut,
         refreshProfile,
+        handleAuthError,
       }}
     >
       {children}
