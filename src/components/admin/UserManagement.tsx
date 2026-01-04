@@ -54,19 +54,20 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
 
   const fetchUsers = async () => {
     setIsLoading(true);
-
     try {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
       if (!session) {
-        console.warn("No active session, aborting fetchUsers");
-        setIsLoading(false);
-        return;
+        throw new Error("Not authenticated");
       }
 
-      const { data, error } = await supabase.functions.invoke("get-users");
+      const { data, error } = await supabase.functions.invoke("get-users", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
 
       if (error) {
         console.error("Error fetching users:", error);
