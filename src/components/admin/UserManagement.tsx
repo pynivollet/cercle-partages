@@ -60,14 +60,28 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        throw new Error("Not authenticated");
+        // Not logged in: don't call the admin-only edge function.
+        setUsers([]);
+        return;
       }
 
-      const { data, error } = await supabase.functions.invoke("get-users", {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+      const invoke = async (accessToken: string) =>
+        supabase.functions.invoke("get-users", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+      let { data, error } = await invoke(session.access_token);
+
+      // If token is stale/rotated, refresh once and retry.
+      if (error && (error as any)?.status === 401 && (error as any)?.message?.includes("Invalid JWT")) {
+        const refreshed = await supabase.auth.refreshSession();
+        const newToken = refreshed.data.session?.access_token;
+        if (newToken) {
+          ({ data, error } = await invoke(newToken));
+        }
+      }
 
       if (error) {
         console.error("Error fetching users:", error);

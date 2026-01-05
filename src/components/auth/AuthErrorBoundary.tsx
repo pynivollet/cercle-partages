@@ -19,9 +19,20 @@ export function AuthErrorBoundary({ children }: { children: React.ReactNode }) {
         
         // Check for auth errors in responses
         if (response.status === 401 || response.status === 403) {
-          const url = typeof args[0] === "string" ? args[0] : args[0] instanceof Request ? args[0].url : "";
-          // Only handle Supabase API errors
-          if (url.includes("supabase")) {
+          const url =
+            typeof args[0] === "string"
+              ? args[0]
+              : args[0] instanceof Request
+                ? args[0].url
+                : "";
+
+          // Only handle Supabase REST/Auth API errors globally.
+          // Edge Functions can legitimately return 401/403 (admin-only endpoints, etc.)
+          // and should not force a global sign-out.
+          const isSupabase = url.includes("supabase");
+          const isEdgeFunction = url.includes("/functions/v1/");
+
+          if (isSupabase && !isEdgeFunction) {
             handleAuthError({ status: response.status });
           }
         }
