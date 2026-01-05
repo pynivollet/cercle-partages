@@ -1,16 +1,1 @@
 project_id = "mprqsjlwfdjdnbgamfiu"
-
-[functions.get-users]
-verify_jwt = false
-
-[functions.invite-user]
-verify_jwt = false
-
-[functions.send-event-invitations]
-verify_jwt = false
-
-[functions.send-event-cancellation]
-verify_jwt = false
-
-[functions.send-date-change-notification]
-verify_jwt = false
