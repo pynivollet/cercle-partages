@@ -103,7 +103,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Check for session/auth errors
       if (
         err.status === 401 ||
-        err.status === 403 ||
         err.code === "session_not_found" ||
         err.code === "PGRST301" ||
         err.message?.includes("JWT") ||
