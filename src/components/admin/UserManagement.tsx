@@ -97,10 +97,22 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
     setIsInviting(true);
 
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        toast.error("Session expirée, veuillez vous reconnecter");
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("invite-user", {
         body: {
           email: newInviteEmail,
           role: newInviteRole,
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
 
@@ -127,10 +139,23 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
     setResendingUserId(user.id);
 
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        toast.error("Session expirée, veuillez vous reconnecter");
+        setResendingUserId(null);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("invite-user", {
         body: {
           email: user.email,
           role: user.roles[0] || "participant",
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
 

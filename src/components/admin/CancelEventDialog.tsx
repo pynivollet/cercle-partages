@@ -33,10 +33,23 @@ const CancelEventDialog = ({
   const handleCancel = async () => {
     setIsCancelling(true);
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        toast.error("Session expirée, veuillez vous reconnecter");
+        setIsCancelling(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke(
         "send-event-cancellation",
         {
           body: { eventId },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
         }
       );
 

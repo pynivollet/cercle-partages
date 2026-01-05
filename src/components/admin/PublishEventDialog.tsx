@@ -106,6 +106,16 @@ const PublishEventDialog = ({
 
     setIsSending(true);
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        toast.error("Session expirée, veuillez vous reconnecter");
+        setIsSending(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke(
         "send-event-invitations",
         {
@@ -114,6 +124,9 @@ const PublishEventDialog = ({
             userIds: sendToAll ? [] : selectedUserIds,
             sendToAll,
             skipStatusUpdate: inviteOnly,
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
           },
         }
       );
