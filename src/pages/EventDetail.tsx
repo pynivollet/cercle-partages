@@ -182,6 +182,18 @@ const EventDetail = () => {
         </div>
 
         {/* Event Header */}
+        {event.image_url && (
+          <div className="editorial-container mb-12">
+            <div className="aspect-[21/9] overflow-hidden bg-muted">
+              <img
+                src={event.image_url}
+                alt={event.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+        )}
+
         <section className="editorial-container section-padding pt-0">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
             {/* Main Content */}

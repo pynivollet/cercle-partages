@@ -35,6 +35,7 @@ export interface EventDetails {
   presenter_id: string | null;
   created_at: string;
   updated_at: string;
+  image_url: string | null;
   presenter: EventPresenterInfo | null;
   presenters: EventPresenterInfo[];
   registrations_count: number;

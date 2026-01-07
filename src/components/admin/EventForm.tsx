@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,9 @@ import {
 import { useLanguage } from "@/i18n/LanguageContext";
 import PresenterSelectorDialog from "./PresenterSelectorDialog";
 import { Database } from "@/integrations/supabase/types";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { ImagePlus, X, Loader2 } from "lucide-react";
 
 type Event = Database["public"]["Tables"]["events"]["Row"];
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -29,6 +32,7 @@ export interface EventFormData {
   participantLimit: string;
   presenterIds: string[];
   status: EventStatus;
+  imageUrl: string | null;
 }
 
 interface EventFormProps {
@@ -38,9 +42,10 @@ interface EventFormProps {
   submitLabel: string;
   isEdit?: boolean;
   onPresenterCreated?: (presenter: Profile) => void;
+  eventId?: string;
 }
 
-const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onPresenterCreated }: EventFormProps) => {
+const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onPresenterCreated, eventId }: EventFormProps) => {
   const { t } = useLanguage();
   const [title, setTitle] = useState(initialData?.title || "");
   const [category, setCategory] = useState<EventCategory | "">(initialData?.category || "");
@@ -51,6 +56,9 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
   const [participantLimit, setParticipantLimit] = useState(initialData?.participantLimit || "");
   const [presenterIds, setPresenterIds] = useState<string[]>(initialData?.presenterIds || []);
   const [status, setStatus] = useState<EventStatus>(initialData?.status || "draft");
+  const [imageUrl, setImageUrl] = useState<string | null>(initialData?.imageUrl || null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (initialData) {
@@ -63,11 +71,75 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
       setParticipantLimit(initialData.participantLimit);
       setPresenterIds(initialData.presenterIds);
       setStatus(initialData.status);
+      setImageUrl(initialData.imageUrl);
     }
   }, [initialData]);
 
   const handleSelectionChange = (ids: string[]) => {
     setPresenterIds(ids);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Veuillez sélectionner une image");
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("L'image ne doit pas dépasser 5 Mo");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${eventId || crypto.randomUUID()}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("event-images")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("event-images")
+        .getPublicUrl(filePath);
+
+      setImageUrl(publicUrl);
+      toast.success("Image téléversée");
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error("Erreur lors du téléversement");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    if (!imageUrl) return;
+
+    // Extract file name from URL
+    const urlParts = imageUrl.split("/");
+    const fileName = urlParts[urlParts.length - 1];
+
+    try {
+      await supabase.storage.from("event-images").remove([fileName]);
+      setImageUrl(null);
+      toast.success("Image supprimée");
+    } catch (error) {
+      console.error("Error removing image:", error);
+      // Still remove from state even if delete fails
+      setImageUrl(null);
+    }
   };
 
   const handleSubmit = () => {
@@ -81,6 +153,7 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
       participantLimit,
       presenterIds,
       status,
+      imageUrl,
     });
   };
 
@@ -163,6 +236,53 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
         onSelectionChange={handleSelectionChange}
         onPresenterCreated={onPresenterCreated}
       />
+
+      {/* Image upload */}
+      <div className="space-y-2">
+        <Label>Image de l'événement</Label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          className="hidden"
+        />
+        {imageUrl ? (
+          <div className="relative">
+            <img
+              src={imageUrl}
+              alt="Aperçu"
+              className="w-full h-48 object-cover rounded-md border border-border"
+            />
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              className="absolute top-2 right-2"
+              onClick={handleRemoveImage}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-32 border-dashed"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? (
+              <Loader2 className="w-6 h-6 animate-spin" />
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <ImagePlus className="w-8 h-8 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Cliquer pour ajouter une image</span>
+              </div>
+            )}
+          </Button>
+        )}
+      </div>
       <Button
         variant="nightBlue"
         className="w-full"
@@ -177,7 +297,7 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
 
 export default EventForm;
 
-export const eventToFormData = (event: Event, presenterIds: string[] = []): EventFormData => {
+export const eventToFormData = (event: Event & { image_url?: string | null }, presenterIds: string[] = []): EventFormData => {
   const eventDate = new Date(event.event_date);
   return {
     title: event.title,
@@ -189,5 +309,6 @@ export const eventToFormData = (event: Event, presenterIds: string[] = []): Even
     participantLimit: event.participant_limit?.toString() || "",
     presenterIds,
     status: event.status,
+    imageUrl: event.image_url || null,
   };
 };

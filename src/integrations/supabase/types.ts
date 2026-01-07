@@ -134,6 +134,7 @@ export type Database = {
           description: string | null
           event_date: string
           id: string
+          image_url: string | null
           location: string | null
           participant_limit: number | null
           presenter_id: string | null
@@ -149,6 +150,7 @@ export type Database = {
           description?: string | null
           event_date: string
           id?: string
+          image_url?: string | null
           location?: string | null
           participant_limit?: number | null
           presenter_id?: string | null
@@ -164,6 +166,7 @@ export type Database = {
           description?: string | null
           event_date?: string
           id?: string
+          image_url?: string | null
           location?: string | null
           participant_limit?: number | null
           presenter_id?: string | null
