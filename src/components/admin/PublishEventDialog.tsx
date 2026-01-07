@@ -13,7 +13,6 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { invokeSecureFunction } from "@/lib/supabaseFunctions";
 import { Mail, Users, Loader2 } from "lucide-react";
 import { getProfileDisplayName } from "@/lib/profileName";
 
@@ -107,22 +106,32 @@ const PublishEventDialog = ({
 
     setIsSending(true);
     try {
-      const data = await invokeSecureFunction<
-        { success: boolean; sent: number; failed: number; error?: string },
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        toast.error("Session expirée, veuillez vous reconnecter");
+        setIsSending(false);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke(
+        "send-event-invitations",
         {
-          eventId: string;
-          userIds: string[];
-          sendToAll: boolean;
-          skipStatusUpdate: boolean;
+          body: {
+            eventId,
+            userIds: sendToAll ? [] : selectedUserIds,
+            sendToAll,
+            skipStatusUpdate: inviteOnly,
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
         }
-      >("send-event-invitations", {
-        body: {
-          eventId,
-          userIds: sendToAll ? [] : selectedUserIds,
-          sendToAll,
-          skipStatusUpdate: inviteOnly,
-        },
-      });
+      );
+
+      if (error) throw error;
 
       if (data.success) {
         toast.success(

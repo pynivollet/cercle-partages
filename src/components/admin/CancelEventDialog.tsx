@@ -9,7 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { invokeSecureFunction } from "@/lib/supabaseFunctions";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -33,15 +33,27 @@ const CancelEventDialog = ({
   const handleCancel = async () => {
     setIsCancelling(true);
     try {
-      const data = await invokeSecureFunction<{
-        success: boolean;
-        sent: number;
-        error?: string;
-      }>("send-event-cancellation", {
-        body: { eventId },
-      });
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      
+      if (!session) {
+        toast.error("Session expirée, veuillez vous reconnecter");
+        setIsCancelling(false);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke(
+        "send-event-cancellation",
+        {
+          body: { eventId },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (error) throw error;
 
       if (data.success) {
         if (data.sent > 0) {

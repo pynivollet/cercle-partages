@@ -13,9 +13,9 @@ import {
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Mail, RefreshCw, Search, Check, Clock, UserX } from "lucide-react";
-import { invokeSecureFunction } from "@/lib/supabaseFunctions";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Database } from "@/integrations/supabase/types";
 import { getProfileDisplayName } from "@/lib/profileName";
@@ -55,16 +55,44 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const data = await invokeSecureFunction<{ users: User[] }>("get-users");
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (data?.users) {
+      if (!session) {
+        // Not logged in: don't call the admin-only edge function.
+        setUsers([]);
+        return;
+      }
+
+      const invoke = async (accessToken: string) =>
+        supabase.functions.invoke("get-users", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+      let { data, error } = await invoke(session.access_token);
+
+      // If token is stale/rotated, refresh once and retry.
+      if (error && (error as any)?.status === 401 && (error as any)?.message?.includes("Invalid JWT")) {
+        const refreshed = await supabase.auth.refreshSession();
+        const newToken = refreshed.data.session?.access_token;
+        if (newToken) {
+          ({ data, error } = await invoke(newToken));
+        }
+      }
+
+      if (error) {
+        console.error("Error fetching users:", error);
+        toast.error("Erreur lors du chargement des utilisateurs");
+      } else if (data?.users) {
         setUsers(data.users);
         onUsersLoaded?.(data.users);
       }
     } catch (err) {
       console.error("Error:", err);
       toast.error("Erreur lors du chargement des utilisateurs");
-      setUsers([]);
     } finally {
       setIsLoading(false);
     }
@@ -83,19 +111,36 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
     setIsInviting(true);
 
     try {
-      await invokeSecureFunction("invite-user", {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        toast.error("Session expirée, veuillez vous reconnecter");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("invite-user", {
         body: {
           email: newInviteEmail,
           role: newInviteRole,
         },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
-      toast.success(`Invitation envoyée à ${newInviteEmail}`);
-      setIsCreateInviteOpen(false);
-      setNewInviteEmail("");
-      setNewInviteRole("participant");
-      // Refresh user list
-      fetchUsers();
+      if (error) {
+        console.error("Invitation error:", error);
+        toast.error("Erreur lors de l'envoi de l'invitation");
+      } else {
+        toast.success(`Invitation envoyée à ${newInviteEmail}`);
+        setIsCreateInviteOpen(false);
+        setNewInviteEmail("");
+        setNewInviteRole("participant");
+        // Refresh user list
+        fetchUsers();
+      }
     } catch (err) {
       console.error("Invitation error:", err);
       toast.error("Erreur lors de l'envoi de l'invitation");
@@ -108,14 +153,32 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
     setResendingUserId(user.id);
 
     try {
-      await invokeSecureFunction("invite-user", {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        toast.error("Session expirée, veuillez vous reconnecter");
+        setResendingUserId(null);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("invite-user", {
         body: {
           email: user.email,
           role: user.roles[0] || "participant",
         },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
-      toast.success(`Invitation renvoyée à ${user.email}`);
+      if (error) {
+        console.error("Resend invitation error:", error);
+        toast.error("Erreur lors du renvoi de l'invitation");
+      } else {
+        toast.success(`Invitation renvoyée à ${user.email}`);
+      }
     } catch (err) {
       console.error("Resend invitation error:", err);
       toast.error("Erreur lors du renvoi de l'invitation");

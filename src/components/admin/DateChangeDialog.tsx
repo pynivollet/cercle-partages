@@ -9,7 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { invokeSecureFunction } from "@/lib/supabaseFunctions";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CalendarClock, Mail, Loader2 } from "lucide-react";
 
@@ -51,19 +51,26 @@ const DateChangeDialog = ({
   const handleSendNotifications = async () => {
     setIsSending(true);
     try {
-      const data = await invokeSecureFunction<{ sent: number }, { eventId: string; oldDate: string; newDate: string }>(
-        "send-date-change-notification",
-        {
-          body: {
-            eventId,
-            oldDate,
-            newDate,
-          },
-        }
-      );
+      const { data: session } = await supabase.auth.getSession();
+      
+      const { data, error } = await supabase.functions.invoke("send-date-change-notification", {
+        body: { 
+          eventId, 
+          oldDate,
+          newDate,
+        },
+        headers: {
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+      });
 
-      toast.success(`Notifications envoyées à ${data.sent} membres. Les inscriptions ont été réinitialisées.`);
-      onConfirm();
+      if (error) {
+        console.error("Error sending notifications:", error);
+        toast.error("Erreur lors de l'envoi des notifications");
+      } else {
+        toast.success(`Notifications envoyées à ${data.sent} membres. Les inscriptions ont été réinitialisées.`);
+        onConfirm();
+      }
     } catch (err) {
       console.error("Error:", err);
       toast.error("Erreur lors de l'envoi des notifications");
