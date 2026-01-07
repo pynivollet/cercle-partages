@@ -21,13 +21,7 @@ interface CancelEventDialogProps {
   onCancelled: () => void;
 }
 
-const CancelEventDialog = ({
-  open,
-  onOpenChange,
-  eventId,
-  eventTitle,
-  onCancelled,
-}: CancelEventDialogProps) => {
+const CancelEventDialog = ({ open, onOpenChange, eventId, eventTitle, onCancelled }: CancelEventDialogProps) => {
   const [isCancelling, setIsCancelling] = useState(false);
 
   const handleCancel = async () => {
@@ -43,22 +37,16 @@ const CancelEventDialog = ({
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke(
-        "send-event-cancellation",
-        {
-          body: { eventId },
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        }
-      );
+      const { data, error } = await supabase.functions.invoke("send-event-cancellation", {
+        body: { eventId },
+      });
 
       if (error) throw error;
 
       if (data.success) {
         if (data.sent > 0) {
           toast.success(
-            `Événement annulé. ${data.sent} participant${data.sent > 1 ? "s" : ""} notifié${data.sent > 1 ? "s" : ""}`
+            `Événement annulé. ${data.sent} participant${data.sent > 1 ? "s" : ""} notifié${data.sent > 1 ? "s" : ""}`,
           );
         } else {
           toast.success("Événement annulé");
@@ -91,9 +79,7 @@ const CancelEventDialog = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isCancelling}>
-            Non, garder l'événement
-          </AlertDialogCancel>
+          <AlertDialogCancel disabled={isCancelling}>Non, garder l'événement</AlertDialogCancel>
           <AlertDialogAction
             onClick={(e) => {
               e.preventDefault();

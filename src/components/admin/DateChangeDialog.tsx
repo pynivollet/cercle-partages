@@ -52,15 +52,12 @@ const DateChangeDialog = ({
     setIsSending(true);
     try {
       const { data: session } = await supabase.auth.getSession();
-      
+
       const { data, error } = await supabase.functions.invoke("send-date-change-notification", {
-        body: { 
-          eventId, 
+        body: {
+          eventId,
           oldDate,
           newDate,
-        },
-        headers: {
-          Authorization: `Bearer ${session.session?.access_token}`,
         },
       });
 
@@ -97,19 +94,16 @@ const DateChangeDialog = ({
               <p>
                 Vous avez modifié la date de l'événement <strong>"{eventTitle}"</strong>.
               </p>
-              
+
               <div className="bg-muted/50 p-3 rounded-lg space-y-2 text-sm">
-                <p className="text-muted-foreground line-through">
-                  Ancienne date : {formatDate(oldDate)}
-                </p>
-                <p className="text-foreground font-medium">
-                  Nouvelle date : {formatDate(newDate)}
-                </p>
+                <p className="text-muted-foreground line-through">Ancienne date : {formatDate(oldDate)}</p>
+                <p className="text-foreground font-medium">Nouvelle date : {formatDate(newDate)}</p>
               </div>
-              
+
               <p>
-                Souhaitez-vous notifier tous les membres de ce changement ? 
-                <span className="text-destructive font-medium"> Les inscriptions existantes seront annulées</span> et les participants devront se réinscrire.
+                Souhaitez-vous notifier tous les membres de ce changement ?
+                <span className="text-destructive font-medium"> Les inscriptions existantes seront annulées</span> et
+                les participants devront se réinscrire.
               </p>
             </div>
           </AlertDialogDescription>

@@ -72,7 +72,7 @@ const PublishEventDialog = ({
           email: "", // Will be resolved server-side
           first_name: p.first_name,
           last_name: p.last_name,
-        })) || []
+        })) || [],
       );
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -83,11 +83,7 @@ const PublishEventDialog = ({
   };
 
   const handleToggleUser = (userId: string) => {
-    setSelectedUserIds((prev) =>
-      prev.includes(userId)
-        ? prev.filter((id) => id !== userId)
-        : [...prev, userId]
-    );
+    setSelectedUserIds((prev) => (prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]));
   };
 
   const handleToggleAll = () => {
@@ -116,27 +112,19 @@ const PublishEventDialog = ({
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke(
-        "send-event-invitations",
-        {
-          body: {
-            eventId,
-            userIds: sendToAll ? [] : selectedUserIds,
-            sendToAll,
-            skipStatusUpdate: inviteOnly,
-          },
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        }
-      );
+      const { data, error } = await supabase.functions.invoke("send-event-invitations", {
+        body: {
+          eventId,
+          userIds: sendToAll ? [] : selectedUserIds,
+          sendToAll,
+          skipStatusUpdate: inviteOnly,
+        },
+      });
 
       if (error) throw error;
 
       if (data.success) {
-        toast.success(
-          `Invitations envoyées à ${data.sent} personne${data.sent > 1 ? "s" : ""}`
-        );
+        toast.success(`Invitations envoyées à ${data.sent} personne${data.sent > 1 ? "s" : ""}`);
         if (data.failed > 0) {
           toast.warning(`${data.failed} envoi(s) ont échoué`);
         }
@@ -158,9 +146,7 @@ const PublishEventDialog = ({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{inviteOnly ? "Inviter des membres" : "Publier l'événement"}</DialogTitle>
-          <DialogDescription>
-            Envoyez une invitation par email aux membres pour "{eventTitle}"
-          </DialogDescription>
+          <DialogDescription>Envoyez une invitation par email aux membres pour "{eventTitle}"</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -171,10 +157,7 @@ const PublishEventDialog = ({
               checked={sendToAll}
               onCheckedChange={(checked) => setSendToAll(checked === true)}
             />
-            <Label
-              htmlFor="sendToAll"
-              className="flex items-center gap-2 cursor-pointer"
-            >
+            <Label htmlFor="sendToAll" className="flex items-center gap-2 cursor-pointer">
               <Users className="w-4 h-4" />
               Envoyer à tous les membres
             </Label>
@@ -184,18 +167,9 @@ const PublishEventDialog = ({
           {!sendToAll && (
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <Label className="text-sm text-muted-foreground">
-                  Sélectionner les destinataires
-                </Label>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleToggleAll}
-                  className="text-xs"
-                >
-                  {selectedUserIds.length === users.length
-                    ? "Tout désélectionner"
-                    : "Tout sélectionner"}
+                <Label className="text-sm text-muted-foreground">Sélectionner les destinataires</Label>
+                <Button variant="ghost" size="sm" onClick={handleToggleAll} className="text-xs">
+                  {selectedUserIds.length === users.length ? "Tout désélectionner" : "Tout sélectionner"}
                 </Button>
               </div>
 
@@ -216,9 +190,7 @@ const PublishEventDialog = ({
                           checked={selectedUserIds.includes(user.id)}
                           onCheckedChange={() => handleToggleUser(user.id)}
                         />
-                        <span className="text-sm">
-                          {getProfileDisplayName(user) || "Utilisateur sans nom"}
-                        </span>
+                        <span className="text-sm">{getProfileDisplayName(user) || "Utilisateur sans nom"}</span>
                       </div>
                     ))}
                   </div>
@@ -235,11 +207,7 @@ const PublishEventDialog = ({
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSending}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSending}>
             Annuler
           </Button>
           <Button
