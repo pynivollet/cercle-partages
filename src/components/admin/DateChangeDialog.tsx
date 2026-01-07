@@ -51,7 +51,6 @@ const DateChangeDialog = ({
   const handleSendNotifications = async () => {
     setIsSending(true);
     try {
-      const { data: session } = await supabase.auth.getSession();
 
       const { data, error } = await supabase.functions.invoke("send-date-change-notification", {
         body: {

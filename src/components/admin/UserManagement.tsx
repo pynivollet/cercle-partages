@@ -65,18 +65,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
         return;
       }
 
-      const invoke = async (accessToken: string) => supabase.functions.invoke("get-users");
-
-      let { data, error } = await invoke(session.access_token);
-
-      // If token is stale/rotated, refresh once and retry.
-      if (error && (error as any)?.status === 401 && (error as any)?.message?.includes("Invalid JWT")) {
-        const refreshed = await supabase.auth.refreshSession();
-        const newToken = refreshed.data.session?.access_token;
-        if (newToken) {
-          ({ data, error } = await invoke(newToken));
-        }
-      }
+      const { data, error } = await supabase.functions.invoke("get-users");
 
       if (error) {
         console.error("Error fetching users:", error);
@@ -120,9 +109,6 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
           email: newInviteEmail,
           role: newInviteRole,
         },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
       });
 
       if (error) {
@@ -162,9 +148,6 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
         body: {
           email: user.email,
           role: user.roles[0] || "participant",
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
         },
       });
 
