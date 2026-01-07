@@ -103,6 +103,7 @@ const Admin = () => {
       status: formData.status,
       created_by: user.id,
       category: formData.category || null,
+      image_url: formData.imageUrl,
     });
 
     if (error) {
@@ -172,6 +173,7 @@ const Admin = () => {
       presenter_id: formData.presenterIds[0] || null,
       status: formData.status,
       category: formData.category || null,
+      image_url: formData.imageUrl,
     });
 
     if (error) {
@@ -416,6 +418,7 @@ const Admin = () => {
                             submitLabel="Enregistrer"
                             isEdit
                             onPresenterCreated={(presenter) => setPresenters([...presenters, presenter])}
+                            eventId={editingEvent.id}
                           />
                           <div className="pt-4 border-t border-border">
                             <EventDocuments eventId={editingEvent.id} userId={user?.id || ""} />
