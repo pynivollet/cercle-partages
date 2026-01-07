@@ -65,12 +65,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
         return;
       }
 
-      const invoke = async (accessToken: string) =>
-        supabase.functions.invoke("get-users", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
+      const invoke = async (accessToken: string) => supabase.functions.invoke("get-users");
 
       let { data, error } = await invoke(session.access_token);
 
