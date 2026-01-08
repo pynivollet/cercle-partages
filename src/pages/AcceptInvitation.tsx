@@ -1,3 +1,4 @@
+import { Session } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
@@ -59,7 +60,7 @@ export default function AcceptInvitation() {
       const errorDescription = params.get("error_description");
       if (errorCode) {
         return {
-          data: { session: null as any },
+          data: { session: null as Session | null },
           error: new Error(errorDescription || errorCode),
         };
       }
@@ -67,7 +68,7 @@ export default function AcceptInvitation() {
       const accessToken = params.get("access_token");
       const refreshToken = params.get("refresh_token");
       if (!accessToken || !refreshToken) {
-        return { data: { session: null as any }, error: null };
+        return { data: { session: null as Session | null }, error: null };
       }
 
       const { data, error } = await supabase.auth.setSession({

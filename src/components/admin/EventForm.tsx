@@ -297,18 +297,3 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
 
 export default EventForm;
 
-export const eventToFormData = (event: Event & { image_url?: string | null }, presenterIds: string[] = []): EventFormData => {
-  const eventDate = new Date(event.event_date);
-  return {
-    title: event.title,
-    category: (event.category as EventCategory) || "",
-    description: event.description || "",
-    date: eventDate.toISOString().split("T")[0],
-    time: eventDate.toTimeString().slice(0, 5),
-    location: event.location || "",
-    participantLimit: event.participant_limit?.toString() || "",
-    presenterIds,
-    status: event.status,
-    imageUrl: event.image_url || null,
-  };
-};

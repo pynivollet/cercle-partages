@@ -58,7 +58,7 @@ const EventDetail = () => {
       setLoading(false);
     };
     fetchEvent();
-  }, [id, user?.id]);
+  }, [id, user]);
 
   const handleRegister = async () => {
     if (!user) {

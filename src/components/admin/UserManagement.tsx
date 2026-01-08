@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -66,7 +66,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
       const {
@@ -94,11 +94,11 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [onUsersLoaded]);
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   const handleCreateInvitation = async () => {
     if (!newInviteEmail) {

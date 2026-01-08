@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   getEventDocuments, 
@@ -20,17 +20,17 @@ const EventDocuments = ({ eventId, userId }: EventDocumentsProps) => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     const { data, error } = await getEventDocuments(eventId);
     if (data && !error) {
       setDocuments(data);
     }
     setLoading(false);
-  };
+  }, [eventId]);
 
   useEffect(() => {
     fetchDocuments();
-  }, [eventId]);
+  }, [fetchDocuments]);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;

@@ -37,7 +37,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [authLoading, setAuthLoading] = useState(true);
   const [rolesLoading, setRolesLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string) => {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
@@ -50,9 +50,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
     
     setProfile(data);
-  };
+  }, []);
 
-  const fetchRoles = async (userId: string) => {
+  const fetchRoles = useCallback(async (userId: string) => {
     setRolesLoading(true);
     try {
       const { data, error } = await supabase
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       setRolesLoading(false);
     }
-  };
+  }, []);
 
   const clearAuthState = useCallback(() => {
     setUser(null);
@@ -222,7 +222,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       subscription.unsubscribe();
       clearInterval(validationInterval);
     };
-  }, []);
+  }, [clearAuthState, fetchProfile, fetchRoles, session, validateSession]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({

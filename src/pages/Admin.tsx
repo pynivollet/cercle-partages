@@ -31,7 +31,25 @@ import { Plus, FileText, Pencil, Send, XCircle, CheckCircle, Trash2, UserPlus } 
 import PresenterManagement from "@/components/admin/PresenterManagement";
 import UserManagement from "@/components/admin/UserManagement";
 import EventDocuments from "@/components/admin/EventDocuments";
-import EventForm, { EventFormData, eventToFormData } from "@/components/admin/EventForm";
+import EventForm, { EventFormData } from "@/components/admin/EventForm";
+
+type EventCategory = Database["public"]["Enums"]["event_category"];
+
+const eventToFormData = (event: Event & { image_url?: string | null }, presenterIds: string[] = []): EventFormData => {
+  const eventDate = new Date(event.event_date);
+  return {
+    title: event.title,
+    category: (event.category as EventCategory) || "",
+    description: event.description || "",
+    date: eventDate.toISOString().split("T")[0],
+    time: eventDate.toTimeString().slice(0, 5),
+    location: event.location || "",
+    participantLimit: event.participant_limit?.toString() || "",
+    presenterIds,
+    status: event.status,
+    imageUrl: event.image_url || null,
+  };
+};
 import PublishEventDialog from "@/components/admin/PublishEventDialog";
 import CancelEventDialog from "@/components/admin/CancelEventDialog";
 import DateChangeDialog from "@/components/admin/DateChangeDialog";

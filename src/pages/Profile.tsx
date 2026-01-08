@@ -124,10 +124,11 @@ const Profile = () => {
       });
 
       setTimeout(() => setProfileSuccess(false), 3000);
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : t.common.error;
       toast({
         title: t.common.error,
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -154,10 +155,11 @@ const Profile = () => {
       });
 
       setTimeout(() => setPasswordSuccess(false), 3000);
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : t.common.error;
       toast({
         title: t.common.error,
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
