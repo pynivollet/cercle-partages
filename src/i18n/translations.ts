@@ -264,6 +264,7 @@ export const translations = {
       delete: "Supprimer",
       edit: "Modifier",
       view: "Voir",
+      add: "Ajouter",
       close: "Fermer",
     },
     // Footer
@@ -567,6 +568,7 @@ export const translations = {
       delete: "Delete",
       edit: "Edit",
       view: "View",
+      add: "Add",
       close: "Close",
     },
     // Footer

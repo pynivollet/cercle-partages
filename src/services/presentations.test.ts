@@ -9,7 +9,7 @@ describe("presentations service", () => {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       order: vi.fn().mockResolvedValue({ data: mockData, error: null }),
-    } as any);
+    } as unknown as ReturnType<typeof mockSupabase.from>);
 
     const { data, error } = await getPresentationsByPresenter("presenter-123");
 
@@ -24,7 +24,7 @@ describe("presentations service", () => {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       order: vi.fn().mockResolvedValue({ data: null, error: mockError }),
-    } as any);
+    } as unknown as ReturnType<typeof mockSupabase.from>);
 
     const { data, error } = await getPresentationsByPresenter("presenter-123");
 

@@ -94,7 +94,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
     } finally {
       setIsLoading(false);
     }
-  }, [onUsersLoaded]);
+  }, [onUsersLoaded, t.admin.errors.loadingUsers]);
 
   useEffect(() => {
     fetchUsers();

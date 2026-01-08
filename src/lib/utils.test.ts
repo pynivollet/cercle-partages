@@ -7,7 +7,9 @@ describe("cn", () => {
   });
 
   it("should handle conditional classes", () => {
-    expect(cn("px-2", true && "py-2", false && "mt-4")).toBe("px-2 py-2");
+    const isTrue = true;
+    const isFalse = false;
+    expect(cn("px-2", isTrue && "py-2", isFalse && "mt-4")).toBe("px-2 py-2");
   });
 
   it("should merge tailwind classes correctly", () => {
