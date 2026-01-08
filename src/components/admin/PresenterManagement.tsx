@@ -40,7 +40,7 @@ interface PresenterManagementProps {
 }
 
 const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: PresenterManagementProps) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   
   // Edit presenter state
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -122,7 +122,7 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("fr-FR", {
+    return new Date(dateString).toLocaleDateString(language === "fr" ? "fr-FR" : "en-US", {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -136,9 +136,9 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
     const { error } = await deletePresenter(presenterToDelete.id);
     
     if (error) {
-      toast.error("Erreur lors de la suppression");
+      toast.error(t.admin.errors.deleteError);
     } else {
-      toast.success("Intervenant supprimé");
+      toast.success(t.admin.presenterDeleted);
       onPresentersChange();
     }
     
@@ -177,17 +177,16 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
           </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Ajouter un intervenant</DialogTitle>
+              <DialogTitle>{t.admin.createPresenter}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
               <p className="text-sm text-muted-foreground">
-                Sélectionnez un membre existant pour le marquer comme intervenant.
-                Pour ajouter un nouvel intervenant, invitez-le d'abord via la section Invitations.
+                {t.admin.addPresenterDescription}
               </p>
               
               {linkableProfiles.length === 0 ? (
                 <p className="text-muted-foreground text-center py-4">
-                  Aucun membre disponible. Invitez d'abord de nouveaux membres.
+                  {t.admin.noMemberAvailable}
                 </p>
               ) : (
                 <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -215,7 +214,7 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
                         size="sm"
                         onClick={() => handleMarkAsPresenter(profile.id)}
                       >
-                        Ajouter
+                        {language === "fr" ? "Ajouter" : "Add"}
                       </Button>
                     </div>
                   ))}
@@ -261,11 +260,11 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Prénom</Label>
+                <Label>{t.admin.firstName}</Label>
                 <Input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Nom</Label>
+                <Label>{t.admin.lastName}</Label>
                 <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} />
               </div>
             </div>
@@ -328,20 +327,22 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
       <AlertDialog open={!!presenterToDelete} onOpenChange={(open) => !open && setPresenterToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer l'intervenant ?</AlertDialogTitle>
+            <AlertDialogTitle>{language === "fr" ? "Supprimer l'intervenant ?" : "Delete presenter?"}</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer {getProfileDisplayName(presenterToDelete)} de la liste des intervenants ? 
-              Cette action retirera le statut d'intervenant mais conservera le profil.
+              {language === "fr" 
+                ? `Êtes-vous sûr de vouloir supprimer ${getProfileDisplayName(presenterToDelete)} de la liste des intervenants ? Cette action retirera le statut d'intervenant mais conservera le profil.`
+                : `Are you sure you want to remove ${getProfileDisplayName(presenterToDelete)} from the presenters list? This action will remove the presenter status but keep the profile.`
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeletePresenter}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? "Suppression..." : "Supprimer"}
+              {isDeleting ? t.admin.deleting : t.common.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -379,7 +380,7 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
                     {getProfileDisplayName(presenter)}
                   </Link>
                   <p className="text-sm text-muted-foreground">
-                    {presenter.bio?.slice(0, 60) || "Aucune bio"}
+                    {presenter.bio?.slice(0, 60) || (language === "fr" ? "Aucune bio" : "No bio")}
                     {presenter.bio && presenter.bio.length > 60 ? "..." : ""}
                   </p>
                 </div>
@@ -389,6 +390,7 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
                   variant="ghost"
                   size="sm"
                   onClick={() => handleViewPresentations(presenter)}
+                  title={t.admin.presentations}
                 >
                   <Calendar className="w-4 h-4" />
                 </Button>
@@ -396,6 +398,7 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
                   variant="ghost"
                   size="sm"
                   onClick={() => handleEditPresenter(presenter)}
+                  title={t.common.edit}
                 >
                   <Pencil className="w-4 h-4" />
                 </Button>
@@ -404,6 +407,7 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
                   size="sm"
                   onClick={() => setPresenterToDelete(presenter)}
                   className="text-destructive hover:text-destructive"
+                  title={t.common.delete}
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>

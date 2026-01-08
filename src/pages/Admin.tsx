@@ -58,7 +58,7 @@ type Event = Database["public"]["Tables"]["events"]["Row"];
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 const Admin = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"events" | "presenters" | "users">("events");
   const [events, setEvents] = useState<Event[]>([]);
@@ -325,7 +325,7 @@ const Admin = () => {
             <p className="font-sans text-sm tracking-widest uppercase text-muted-foreground mb-4">
               {t.admin.title}
             </p>
-            <h1 className="text-headline text-foreground">Administration</h1>
+            <h1 className="text-headline text-foreground">{t.admin.title}</h1>
           </motion.div>
 
           {/* Tabs */}
@@ -370,7 +370,7 @@ const Admin = () => {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Utilisateurs
+              {t.admin.users}
               {activeTab === "users" && (
                 <motion.div
                   layoutId="adminTab"
@@ -424,7 +424,7 @@ const Admin = () => {
                 }}>
                   <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Modifier l'événement</DialogTitle>
+                      <DialogTitle>{language === "fr" ? "Modifier l'événement" : "Edit event"}</DialogTitle>
                     </DialogHeader>
                     <div className="mt-4 space-y-6">
                       {editingEvent && (
@@ -433,7 +433,7 @@ const Admin = () => {
                             presenters={presenters}
                             initialData={eventToFormData(editingEvent, editingEventPresenterIds)}
                             onSubmit={handleEditEvent}
-                            submitLabel="Enregistrer"
+                            submitLabel={t.common.save}
                             isEdit
                             onPresenterCreated={(presenter) => setPresenters([...presenters, presenter])}
                             eventId={editingEvent.id}
@@ -629,24 +629,24 @@ const Admin = () => {
               <Dialog open={!!deleteDialogEvent} onOpenChange={(open) => !open && setDeleteDialogEvent(null)}>
                 <DialogContent className="max-w-md">
                   <DialogHeader>
-                    <DialogTitle className="text-destructive">Supprimer l'événement</DialogTitle>
-                    <DialogDescription className="pt-2">
-                      Êtes-vous sûr de vouloir supprimer définitivement l'événement "{deleteDialogEvent?.title}" ?
-                      <br /><br />
-                      <span className="text-destructive font-medium">
-                        ⚠️ Cette action est irréversible. Toutes les données associées seront perdues.
-                      </span>
-                    </DialogDescription>
-                  </DialogHeader>
-                  <DialogFooter className="flex gap-2 sm:gap-0">
-                    <Button variant="outline" onClick={() => setDeleteDialogEvent(null)} disabled={isDeleting}>
-                      Annuler
-                    </Button>
-                    <Button variant="destructive" onClick={handleDeleteEvent} disabled={isDeleting}>
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      {isDeleting ? "Suppression..." : "Supprimer définitivement"}
-                    </Button>
-                  </DialogFooter>
+                      <DialogTitle className="text-destructive">Supprimer l'événement</DialogTitle>
+                      <DialogDescription className="pt-2">
+                        {t.admin.deleteConfirmation.replace(" ?", ` "${deleteDialogEvent?.title}" ?`)}
+                        <br /><br />
+                        <span className="text-destructive font-medium">
+                          ⚠️ {language === "fr" ? "Cette action est irréversible. Toutes les données associées seront perdues." : "This action is irreversible. All associated data will be lost."}
+                        </span>
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex gap-2 sm:gap-0">
+                      <Button variant="outline" onClick={() => setDeleteDialogEvent(null)} disabled={isDeleting}>
+                        {t.common.cancel}
+                      </Button>
+                      <Button variant="destructive" onClick={handleDeleteEvent} disabled={isDeleting}>
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        {isDeleting ? t.admin.deleting : t.admin.deleteConfirm}
+                      </Button>
+                    </DialogFooter>
                 </DialogContent>
               </Dialog>
 

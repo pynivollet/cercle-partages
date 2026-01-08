@@ -8,6 +8,7 @@ import {
 } from "@/services/eventDocuments";
 import { toast } from "sonner";
 import { FileText, Trash2, Upload, Loader2 } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface EventDocumentsProps {
   eventId: string;
@@ -15,6 +16,7 @@ interface EventDocumentsProps {
 }
 
 const EventDocuments = ({ eventId, userId }: EventDocumentsProps) => {
+  const { t } = useLanguage();
   const [documents, setDocuments] = useState<EventDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -40,21 +42,21 @@ const EventDocuments = ({ eventId, userId }: EventDocumentsProps) => {
     
     for (const file of Array.from(files)) {
       if (file.type !== "application/pdf") {
-        toast.error(`${file.name} n'est pas un fichier PDF`);
+        toast.error(t.admin.notPdf.replace("{file}", file.name));
         continue;
       }
 
       if (file.size > 10 * 1024 * 1024) {
-        toast.error(`${file.name} dépasse la limite de 10 Mo`);
+        toast.error(t.admin.fileTooLarge.replace("{file}", file.name).replace("{size}", "10 Mo"));
         continue;
       }
 
       const { data, error } = await uploadEventDocument(eventId, file, userId);
       if (error) {
-        toast.error(`Erreur lors de l'upload de ${file.name}`);
+        toast.error(t.admin.uploadError.replace("{file}", file.name));
       } else if (data) {
         setDocuments((prev) => [...prev, data]);
-        toast.success(`${file.name} uploadé`);
+        toast.success(t.admin.fileUploaded.replace("{file}", file.name));
       }
     }
 
@@ -67,10 +69,10 @@ const EventDocuments = ({ eventId, userId }: EventDocumentsProps) => {
   const handleDelete = async (doc: EventDocument) => {
     const { error } = await deleteEventDocument(doc.id, doc.file_url);
     if (error) {
-      toast.error("Erreur lors de la suppression");
+      toast.error(t.admin.errors.deleteError);
     } else {
       setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
-      toast.success("Document supprimé");
+      toast.success(t.admin.documentDeleted);
     }
   };
 
@@ -85,7 +87,7 @@ const EventDocuments = ({ eventId, userId }: EventDocumentsProps) => {
     return (
       <div className="flex items-center gap-2 text-muted-foreground">
         <Loader2 className="w-4 h-4 animate-spin" />
-        Chargement...
+        {t.common.loading}
       </div>
     );
   }
@@ -93,7 +95,7 @@ const EventDocuments = ({ eventId, userId }: EventDocumentsProps) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="font-sans text-sm font-medium">Documents PDF</h4>
+        <h4 className="font-sans text-sm font-medium">{t.admin.documents}</h4>
         <Button
           variant="outline"
           size="sm"
@@ -105,7 +107,7 @@ const EventDocuments = ({ eventId, userId }: EventDocumentsProps) => {
           ) : (
             <Upload className="w-4 h-4 mr-2" />
           )}
-          Ajouter
+          {t.common.add}
         </Button>
         <input
           ref={fileInputRef}
@@ -118,7 +120,7 @@ const EventDocuments = ({ eventId, userId }: EventDocumentsProps) => {
       </div>
 
       {documents.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aucun document</p>
+        <p className="text-sm text-muted-foreground">{t.admin.noDocuments}</p>
       ) : (
         <div className="space-y-2">
           {documents.map((doc) => (

@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Users, X, Search } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { getProfileDisplayName } from "@/lib/profileName";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -29,6 +30,7 @@ const PresenterSelectorDialog = ({
   selectedIds,
   onSelectionChange,
 }: PresenterSelectorDialogProps) => {
+  const { t, language } = useLanguage();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -76,13 +78,15 @@ const PresenterSelectorDialog = ({
           <Button type="button" variant="outline" className="w-full">
             <Users className="h-4 w-4 mr-2" />
             {selectedIds.length > 0
-              ? `${selectedIds.length} intervenant${selectedIds.length > 1 ? "s" : ""} sélectionné${selectedIds.length > 1 ? "s" : ""}`
-              : "Sélectionner des intervenants"}
+              ? language === "fr" 
+                ? `${selectedIds.length} intervenant${selectedIds.length > 1 ? "s" : ""} sélectionné${selectedIds.length > 1 ? "s" : ""}`
+                : `${selectedIds.length} presenter${selectedIds.length > 1 ? "s" : ""} selected`
+              : language === "fr" ? "Sélectionner des intervenants" : "Select presenters"}
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Sélectionner des intervenants</DialogTitle>
+            <DialogTitle>{language === "fr" ? "Sélectionner des intervenants" : "Select presenters"}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
@@ -90,7 +94,7 @@ const PresenterSelectorDialog = ({
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Rechercher un intervenant..."
+                placeholder={language === "fr" ? "Rechercher un intervenant..." : "Search for a presenter..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -102,7 +106,9 @@ const PresenterSelectorDialog = ({
               <div className="p-3 space-y-2">
                 {filteredPresenters.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    {searchQuery ? "Aucun résultat" : "Aucun intervenant disponible"}
+                    {searchQuery 
+                      ? (language === "fr" ? "Aucun résultat" : "No results") 
+                      : (language === "fr" ? "Aucun intervenant disponible" : "No presenters available")}
                   </p>
                 ) : (
                   filteredPresenters.map((presenter) => (
@@ -138,10 +144,10 @@ const PresenterSelectorDialog = ({
 
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">
-                {selectedIds.length} sélectionné{selectedIds.length > 1 ? "s" : ""}
+                {selectedIds.length} {language === "fr" ? `sélectionné${selectedIds.length > 1 ? "s" : ""}` : "selected"}
               </span>
               <Button type="button" onClick={() => setOpen(false)}>
-                Confirmer
+                {t.common.confirm}
               </Button>
             </div>
           </div>

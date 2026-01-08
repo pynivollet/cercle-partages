@@ -49,7 +49,7 @@ interface UserManagementProps {
 }
 
 const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -83,14 +83,14 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
 
       if (error) {
         console.error("Error fetching users:", error);
-        toast.error("Erreur lors du chargement des utilisateurs");
+        toast.error(t.admin.errors.loadingUsers);
       } else if (data?.users) {
         setUsers(data.users);
         onUsersLoaded?.(data.users);
       }
     } catch (err) {
       console.error("Error:", err);
-      toast.error("Erreur lors du chargement des utilisateurs");
+      toast.error(t.admin.errors.loadingUsers);
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +102,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
 
   const handleCreateInvitation = async () => {
     if (!newInviteEmail) {
-      toast.error("Veuillez entrer une adresse email");
+      toast.error(t.admin.errors.emailRequired);
       return;
     }
 
@@ -114,7 +114,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        toast.error("Session expirée, veuillez vous reconnecter");
+        toast.error(t.admin.errors.sessionExpired);
         return;
       }
 
@@ -127,9 +127,9 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
 
       if (error) {
         console.error("Invitation error:", error);
-        toast.error("Erreur lors de l'envoi de l'invitation");
+        toast.error(t.admin.errors.invitationError);
       } else {
-        toast.success(`Invitation envoyée à ${newInviteEmail}`);
+        toast.success(t.admin.invitationSentTo.replace("{email}", newInviteEmail));
         setIsCreateInviteOpen(false);
         setNewInviteEmail("");
         setNewInviteRole("participant");
@@ -138,7 +138,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
       }
     } catch (err) {
       console.error("Invitation error:", err);
-      toast.error("Erreur lors de l'envoi de l'invitation");
+      toast.error(t.admin.errors.invitationError);
     } finally {
       setIsInviting(false);
     }
@@ -153,7 +153,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        toast.error("Session expirée, veuillez vous reconnecter");
+        toast.error(t.admin.errors.sessionExpired);
         setResendingUserId(null);
         return;
       }
@@ -167,13 +167,13 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
 
       if (error) {
         console.error("Resend invitation error:", error);
-        toast.error("Erreur lors du renvoi de l'invitation");
+        toast.error(t.admin.errors.resendError);
       } else {
-        toast.success(`Invitation renvoyée à ${user.email}`);
+        toast.success(t.admin.invitationResentTo.replace("{email}", user.email));
       }
     } catch (err) {
       console.error("Resend invitation error:", err);
-      toast.error("Erreur lors du renvoi de l'invitation");
+      toast.error(t.admin.errors.resendError);
     } finally {
       setResendingUserId(null);
     }
@@ -191,7 +191,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
       if (error) throw error;
 
       if (data?.success) {
-        toast.success(`Utilisateur ${userToDelete.email} supprimé`);
+        toast.success(t.admin.userDeleted.replace("{email}", userToDelete.email));
         setUserToDelete(null);
         fetchUsers();
       } else {
@@ -199,7 +199,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
       }
     } catch (err) {
       console.error("Delete user error:", err);
-      toast.error("Erreur lors de la suppression de l'utilisateur");
+      toast.error(t.admin.errors.deleteError);
     } finally {
       setIsDeleting(false);
     }
@@ -210,7 +210,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
       case "admin":
         return "Admin";
       case "presenter":
-        return "Présentateur";
+        return t.admin.presenters.slice(0, -1); // Remove 's' for singular if possible, or just use the key
       case "participant":
         return "Participant";
       default:
@@ -230,7 +230,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("fr-FR", {
+    return new Date(dateString).toLocaleDateString(language === "fr" ? "fr-FR" : "en-US", {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -256,7 +256,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
   return (
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h2 className="font-serif text-xl">Utilisateurs</h2>
+        <h2 className="font-serif text-xl">{t.admin.users}</h2>
         <Dialog open={isCreateInviteOpen} onOpenChange={setIsCreateInviteOpen}>
           <DialogTrigger asChild>
             <Button variant="nightBlue" size="sm">
@@ -267,7 +267,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{t.admin.createInvitation}</DialogTitle>
-              <DialogDescription>Un email d'invitation sera envoyé à l'adresse indiquée.</DialogDescription>
+              <DialogDescription>{language === "fr" ? "Un email d'invitation sera envoyé à l'adresse indiquée." : "An invitation email will be sent to the specified address."}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 mt-4">
               <div className="space-y-2">
@@ -288,7 +288,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="participant">Participant</SelectItem>
-                    <SelectItem value="presenter">Présentateur</SelectItem>
+                    <SelectItem value="presenter">{t.admin.presenters.slice(0, -1)}</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
@@ -300,7 +300,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
                 disabled={isInviting || !newInviteEmail}
               >
                 <Mail className="w-4 h-4 mr-2" />
-                {isInviting ? "Envoi en cours..." : "Envoyer l'invitation"}
+                {isInviting ? t.admin.sendingInvitation : t.admin.sendInvitation}
               </Button>
             </div>
           </DialogContent>
@@ -312,7 +312,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher par nom ou email..."
+            placeholder={t.admin.searchPlaceholder}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -320,12 +320,12 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
         </div>
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "all" | "accepted" | "pending")}>
           <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Filtrer par statut" />
+            <SelectValue placeholder={t.admin.filterByStatus} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tous les statuts</SelectItem>
-            <SelectItem value="accepted">Inscription validée</SelectItem>
-            <SelectItem value="pending">En attente</SelectItem>
+            <SelectItem value="all">{t.admin.allStatus}</SelectItem>
+            <SelectItem value="accepted">{t.admin.registrationValidated}</SelectItem>
+            <SelectItem value="pending">{t.admin.pending}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -337,8 +337,8 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
           <UserX className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <p className="text-sm text-muted-foreground">
             {searchTerm || statusFilter !== "all"
-              ? "Aucun utilisateur ne correspond à votre recherche"
-              : "Aucun utilisateur"}
+              ? t.admin.noUserFound
+              : t.admin.noUsers}
           </p>
         </div>
       ) : (
@@ -346,11 +346,11 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Utilisateur</TableHead>
-                <TableHead className="hidden sm:table-cell">Rôle</TableHead>
-                <TableHead className="hidden md:table-cell">Inscrit le</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t.admin.user}</TableHead>
+                <TableHead className="hidden sm:table-cell">{t.admin.role}</TableHead>
+                <TableHead className="hidden md:table-cell">{t.admin.registeredAt}</TableHead>
+                <TableHead>{t.admin.status}</TableHead>
+                <TableHead className="text-right">{t.admin.actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -374,7 +374,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
                         ))}
                         {user.is_presenter && (
                           <Badge variant="secondary" className="text-xs">
-                            Intervenant
+                            {t.admin.presenters.slice(0, -1)}
                           </Badge>
                         )}
                       </div>
@@ -387,7 +387,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
                           {getRoleLabel(role)}
                         </Badge>
                       ))}
-                      {user.is_presenter && <Badge variant="secondary">Intervenant</Badge>}
+                      {user.is_presenter && <Badge variant="secondary">{t.admin.presenters.slice(0, -1)}</Badge>}
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
@@ -397,12 +397,12 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
                     {user.invitation_accepted ? (
                       <div className="flex items-center gap-1 text-primary">
                         <Check className="w-4 h-4" />
-                        <span className="text-sm hidden sm:inline">Validé</span>
+                        <span className="text-sm hidden sm:inline">{language === "fr" ? "Validé" : "Validated"}</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-1 text-muted-foreground">
                         <Clock className="w-4 h-4" />
-                        <span className="text-sm hidden sm:inline">En attente</span>
+                        <span className="text-sm hidden sm:inline">{t.admin.pending}</span>
                       </div>
                     )}
                   </TableCell>
@@ -414,11 +414,11 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
                           size="sm"
                           onClick={() => handleResendInvitation(user)}
                           disabled={resendingUserId === user.id}
-                          title="Renvoyer l'invitation"
+                          title={t.admin.resendInvitation}
                         >
                           <RefreshCw className={`w-4 h-4 ${resendingUserId === user.id ? "animate-spin" : ""}`} />
                           <span className="ml-2 hidden sm:inline">
-                            {resendingUserId === user.id ? "Envoi..." : "Renvoyer"}
+                            {resendingUserId === user.id ? t.admin.resending : t.admin.resend}
                           </span>
                         </Button>
                       )}
@@ -426,7 +426,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
                         variant="ghost"
                         size="sm"
                         onClick={() => setUserToDelete(user)}
-                        title="Supprimer l'utilisateur"
+                        title={t.admin.deleteUser}
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -441,29 +441,27 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
       )}
 
       <p className="text-sm text-muted-foreground mt-4">
-        {filteredUsers.length} utilisateur{filteredUsers.length > 1 ? "s" : ""}
-        {statusFilter !== "all" && ` (filtrés sur ${users.length} au total)`}
+        {filteredUsers.length} {t.admin.user.toLowerCase()}{filteredUsers.length > 1 ? "s" : ""}
+        {statusFilter !== "all" && (language === "fr" ? ` (filtrés sur ${users.length} au total)` : ` (filtered from ${users.length} total)`)}
       </p>
 
       {/* Delete User Confirmation Dialog */}
       <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer l'utilisateur ?</AlertDialogTitle>
+            <AlertDialogTitle>{t.admin.deleteUserTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irréversible. L'utilisateur{" "}
-              <strong>{userToDelete?.email}</strong> sera définitivement supprimé
-              ainsi que toutes ses données associées (profil, inscriptions, rôles).
+              {t.admin.deleteUserDescription.replace("{email}", userToDelete?.email || "")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteUser}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? "Suppression..." : "Supprimer définitivement"}
+              {isDeleting ? t.admin.deleting : t.admin.deleteConfirm}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

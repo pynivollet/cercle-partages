@@ -85,13 +85,13 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      toast.error("Veuillez sélectionner une image");
+      toast.error(t.admin.selectImage);
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("L'image ne doit pas dépasser 5 Mo");
+      toast.error(t.admin.imageTooLarge.replace("{size}", "5 Mo"));
       return;
     }
 
