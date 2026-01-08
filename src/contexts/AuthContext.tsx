@@ -69,6 +69,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (data) {
         setRoles(data.map((r) => r.role));
       }
+    } catch (err) {
+      console.error("Exception in fetchRoles:", err);
     } finally {
       setRolesLoading(false);
     }
@@ -159,10 +161,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     let mounted = true;
 
-    // Set up auth state listener FIRST
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         if (!mounted) return;
+
+        console.log("Auth state change:", event, !!currentSession);
 
         if (event === "SIGNED_OUT") {
           clearAuthState();
@@ -174,13 +178,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        // Defer Supabase calls with setTimeout to prevent deadlock
         if (currentSession?.user) {
-          setTimeout(() => {
-            if (!mounted) return;
-            fetchProfile(currentSession.user.id);
-            fetchRoles(currentSession.user.id);
-          }, 0);
+          // Si on a un utilisateur, on doit s'assurer que les chargements sont actifs
+          setRolesLoading(true);
+          fetchProfile(currentSession.user.id);
+          fetchRoles(currentSession.user.id);
         } else {
           setProfile(null);
           setRoles([]);
@@ -191,31 +193,50 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     );
 
-    // THEN validate and check for existing session
+    // Initial session check
     const initializeAuth = async () => {
-      const validSession = await validateSession();
-      
-      if (!mounted) return;
+      try {
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
 
-      if (validSession?.user) {
-        setSession(validSession);
-        setUser(validSession.user);
-        await fetchProfile(validSession.user.id);
-        await fetchRoles(validSession.user.id);
-      } else {
-        setRolesLoading(false);
+        if (error) {
+          console.error("Error getting session:", error);
+          await forceSignOut();
+          setAuthLoading(false);
+          setRolesLoading(false);
+          return;
+        }
+
+        if (initialSession?.user) {
+          setSession(initialSession);
+          setUser(initialSession.user);
+          // On attend la résolution du profil et des rôles
+          await Promise.all([
+            fetchProfile(initialSession.user.id),
+            fetchRoles(initialSession.user.id)
+          ]);
+        } else {
+          clearAuthState();
+          setRolesLoading(false);
+        }
+      } catch (err) {
+        console.error("Initialization error:", err);
+        if (mounted) {
+          setRolesLoading(false);
+        }
+      } finally {
+        if (mounted) {
+          setAuthLoading(false);
+        }
       }
-      
-      setAuthLoading(false);
     };
 
     initializeAuth();
 
     // Periodic session validation (every 5 minutes)
     const validationInterval = setInterval(() => {
-      if (session) {
-        validateSession();
-      }
+      validateSession();
     }, 5 * 60 * 1000);
 
     return () => {
@@ -223,7 +244,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       subscription.unsubscribe();
       clearInterval(validationInterval);
     };
-  }, [clearAuthState, fetchProfile, fetchRoles, session, validateSession]);
+  }, [clearAuthState, fetchProfile, fetchRoles, forceSignOut, validateSession]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
