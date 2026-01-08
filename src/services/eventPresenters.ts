@@ -63,32 +63,3 @@ export const setEventPresenters = async (eventId: string, presenterIds: string[]
   return { error: insertError };
 };
 
-/**
- * Add a single presenter to an event (admin only)
- */
-export const addEventPresenter = async (
-  eventId: string,
-  presenterId: string,
-  displayOrder?: number,
-): Promise<{ error: Error | null }> => {
-  const { error } = await supabase.from("event_presenters").insert({
-    event_id: eventId,
-    presenter_id: presenterId,
-    display_order: displayOrder ?? 0,
-  });
-
-  return { error };
-};
-
-/**
- * Remove a presenter from an event (admin only)
- */
-export const removeEventPresenter = async (eventId: string, presenterId: string): Promise<{ error: Error | null }> => {
-  const { error } = await supabase
-    .from("event_presenters")
-    .delete()
-    .eq("event_id", eventId)
-    .eq("presenter_id", presenterId);
-
-  return { error };
-};

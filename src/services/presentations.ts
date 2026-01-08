@@ -13,42 +13,6 @@ export interface PresentationWithPresenter extends Presentation {
   } | null;
 }
 
-export const getPresentations = async (): Promise<{ data: PresentationWithPresenter[] | null; error: Error | null }> => {
-  const { data, error } = await supabase
-    .from("presentations")
-    .select(`
-      *,
-      presenter:profiles!presentations_presenter_id_fkey(
-        id,
-        first_name,
-        last_name,
-        bio,
-        avatar_url
-      )
-    `)
-    .order("presentation_date", { ascending: false });
-
-  return { data, error };
-};
-
-export const getPresentationById = async (id: string): Promise<{ data: PresentationWithPresenter | null; error: Error | null }> => {
-  const { data, error } = await supabase
-    .from("presentations")
-    .select(`
-      *,
-      presenter:profiles!presentations_presenter_id_fkey(
-        id,
-        first_name,
-        last_name,
-        bio,
-        avatar_url
-      )
-    `)
-    .eq("id", id)
-    .maybeSingle();
-
-  return { data, error };
-};
 
 export const getPresentationsByPresenter = async (presenterId: string): Promise<{ data: Presentation[] | null; error: Error | null }> => {
   const { data, error } = await supabase

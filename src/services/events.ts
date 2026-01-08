@@ -209,11 +209,3 @@ export const updateEvent = async (
   return { data, error };
 };
 
-/**
- * Delete an event (admin only)
- */
-export const deleteEvent = async (id: string): Promise<{ error: Error | null }> => {
-  const { error } = await supabase.from("events").delete().eq("id", id);
-
-  return { error };
-};
