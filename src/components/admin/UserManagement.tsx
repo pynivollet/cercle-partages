@@ -11,11 +11,21 @@ import {
   DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Mail, RefreshCw, Search, Check, Clock, UserX } from "lucide-react";
+import { Plus, Mail, RefreshCw, Search, Check, Clock, UserX, Trash2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Database } from "@/integrations/supabase/types";
 import { getProfileDisplayName } from "@/lib/profileName";
@@ -51,6 +61,10 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
   const [newInviteRole, setNewInviteRole] = useState<AppRole>("participant");
   const [isInviting, setIsInviting] = useState(false);
   const [resendingUserId, setResendingUserId] = useState<string | null>(null);
+
+  // Delete user state
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -162,6 +176,32 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
       toast.error("Erreur lors du renvoi de l'invitation");
     } finally {
       setResendingUserId(null);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { userId: userToDelete.id },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success(`Utilisateur ${userToDelete.email} supprimé`);
+        setUserToDelete(null);
+        fetchUsers();
+      } else {
+        throw new Error(data?.error || "Erreur inconnue");
+      }
+    } catch (err) {
+      console.error("Delete user error:", err);
+      toast.error("Erreur lors de la suppression de l'utilisateur");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -367,20 +407,31 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {!user.invitation_accepted && (
+                    <div className="flex items-center justify-end gap-1">
+                      {!user.invitation_accepted && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleResendInvitation(user)}
+                          disabled={resendingUserId === user.id}
+                          title="Renvoyer l'invitation"
+                        >
+                          <RefreshCw className={`w-4 h-4 ${resendingUserId === user.id ? "animate-spin" : ""}`} />
+                          <span className="ml-2 hidden sm:inline">
+                            {resendingUserId === user.id ? "Envoi..." : "Renvoyer"}
+                          </span>
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleResendInvitation(user)}
-                        disabled={resendingUserId === user.id}
-                        title="Renvoyer l'invitation"
+                        onClick={() => setUserToDelete(user)}
+                        title="Supprimer l'utilisateur"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
-                        <RefreshCw className={`w-4 h-4 ${resendingUserId === user.id ? "animate-spin" : ""}`} />
-                        <span className="ml-2 hidden sm:inline">
-                          {resendingUserId === user.id ? "Envoi..." : "Renvoyer"}
-                        </span>
+                        <Trash2 className="w-4 h-4" />
                       </Button>
-                    )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -393,6 +444,30 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
         {filteredUsers.length} utilisateur{filteredUsers.length > 1 ? "s" : ""}
         {statusFilter !== "all" && ` (filtrés sur ${users.length} au total)`}
       </p>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer l'utilisateur ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. L'utilisateur{" "}
+              <strong>{userToDelete?.email}</strong> sera définitivement supprimé
+              ainsi que toutes ses données associées (profil, inscriptions, rôles).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Suppression..." : "Supprimer définitivement"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
