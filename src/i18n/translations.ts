@@ -91,7 +91,7 @@ export const translations = {
       dateAndTime: "Date et heure",
       location: "Lieu",
       addressPrivate: "Adresse communiquée aux inscrits",
-      backToEvents: "Retour aux rencontres",
+      backToEvents: "Retour aux évènements",
       presentedBy: "Présenté par",
       discoverProfile: "Découvrir son profil complet",
       registrationSuccess: "Inscription confirmée",

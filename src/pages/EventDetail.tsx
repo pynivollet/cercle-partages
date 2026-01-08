@@ -177,7 +177,7 @@ const EventDetail = () => {
             to="/evenements"
             className="font-sans text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            ← Retour aux rencontres
+            ← Retour aux évènements
           </Link>
         </div>
 
