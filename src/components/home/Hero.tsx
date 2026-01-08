@@ -24,7 +24,7 @@ const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className="w-72 md:w-96 h-auto mb-8"
+            className="w-80 md:w-[28rem] lg:w-[32rem] h-auto mb-10"
           />
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
