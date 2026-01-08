@@ -56,24 +56,22 @@ const PublishEventDialog = ({
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      // Fetch all profiles
-      const { data: profiles, error } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name")
-        .order("first_name");
+      // Use the get-users edge function to get only validated users
+      const { data, error } = await supabase.functions.invoke("get-users");
 
       if (error) throw error;
 
-      // We don't have direct access to emails from client, but we can display profile info
-      // The edge function will handle fetching emails server-side
-      setUsers(
-        profiles?.map((p) => ({
-          id: p.id,
-          email: "", // Will be resolved server-side
-          first_name: p.first_name,
-          last_name: p.last_name,
-        })) || [],
-      );
+      // Filter to only include users who have accepted their invitation (email_confirmed_at set)
+      const validatedUsers = (data?.users || [])
+        .filter((u: { invitation_accepted: boolean }) => u.invitation_accepted)
+        .map((u: { id: string; email: string; first_name: string | null; last_name: string | null }) => ({
+          id: u.id,
+          email: u.email,
+          first_name: u.first_name,
+          last_name: u.last_name,
+        }));
+
+      setUsers(validatedUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
       toast.error("Erreur lors du chargement des utilisateurs");
