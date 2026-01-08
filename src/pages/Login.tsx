@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -18,24 +19,55 @@ const loginSchema = z.object({
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { signIn, user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { signIn, resetPassword, user } = useAuth();
   const { t, language } = useLanguage();
 
   // Login form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  const isRecoveryMode = searchParams.get("type") === "recovery";
 
   // Redirect if already logged in
   useEffect(() => {
-    if (user) {
+    if (user && searchParams.get("type") !== "recovery") {
       navigate("/");
     }
-  }, [user, navigate]);
+  }, [user, navigate, searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (isRecoveryMode) {
+      if (password !== confirmPassword) {
+        toast.error(t.auth.passwordMismatch);
+        return;
+      }
+      if (password.length < 8) {
+        toast.error(t.auth.passwordTooShort);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) {
+          toast.error(error.message);
+        } else {
+          toast.success(t.profile.passwordUpdated);
+          navigate("/");
+        }
+      } catch {
+        toast.error(t.auth.error);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
     const validation = loginSchema.safeParse({ email, password });
     if (!validation.success) {
       toast.error(t.auth.invalidCredentials);
@@ -50,6 +82,33 @@ const Login = () => {
       } else {
         toast.success(t.auth.loginSuccess);
         navigate("/");
+      }
+    } catch {
+      toast.error(t.auth.error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast.error(t.auth.emailRequired);
+      return;
+    }
+
+    const emailValidation = z.string().email().safeParse(email);
+    if (!emailValidation.success) {
+      toast.error(t.auth.invalidCredentials);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await resetPassword(email);
+      if (error) {
+        toast.error(error.message || t.auth.error);
+      } else {
+        toast.success(t.auth.resetPasswordSuccess);
       }
     } catch {
       toast.error(t.auth.error);
@@ -78,10 +137,12 @@ const Login = () => {
           {/* Title */}
           <div className="mb-12">
             <h2 className="font-serif text-2xl text-foreground mb-2">
-              {t.auth.login}
+              {isRecoveryMode ? (language === "fr" ? "Réinitialiser le mot de passe" : "Reset password") : t.auth.login}
             </h2>
             <p className="text-muted-foreground text-sm">
-              {language === "fr" ? "Accès réservé aux membres invités" : "Access reserved for invited members"}
+              {isRecoveryMode 
+                ? (language === "fr" ? "Veuillez définir votre nouveau mot de passe" : "Please set your new password")
+                : (language === "fr" ? "Accès réservé aux membres invités" : "Access reserved for invited members")}
             </p>
           </div>
 
@@ -93,24 +154,26 @@ const Login = () => {
             className="space-y-6"
             onSubmit={handleLogin}
           >
-            <div className="space-y-2">
-              <Label htmlFor="email" className="font-sans text-sm">
-                {t.auth.email}
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="votre@email.com"
-                className="h-12 bg-transparent border-border focus:border-foreground"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
+            {!isRecoveryMode && (
+              <div className="space-y-2">
+                <Label htmlFor="email" className="font-sans text-sm">
+                  {t.auth.email}
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="votre@email.com"
+                  className="h-12 bg-transparent border-border focus:border-foreground"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="password" className="font-sans text-sm">
-                {t.auth.password}
+                {isRecoveryMode ? t.auth.password : t.auth.password}
               </Label>
               <div className="relative">
                 <Input
@@ -132,20 +195,54 @@ const Login = () => {
               </div>
             </div>
 
+            {isRecoveryMode && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="font-sans text-sm">
+                  {t.auth.confirmPassword}
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showPassword ? "text" : "password"}
+                    placeholder=""
+                    className="h-12 bg-transparent border-border focus:border-foreground pr-12"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
             <Button 
               variant="nightBlue" 
               size="lg" 
               className="w-full mt-8"
               disabled={isLoading}
             >
-              {isLoading ? t.common.loading : t.auth.loginButton}
+              {isLoading ? t.common.loading : (isRecoveryMode ? (language === "fr" ? "Mettre à jour" : "Update") : t.auth.loginButton)}
             </Button>
 
-            <p className="text-center text-sm text-muted-foreground mt-6">
-              <a href="#" className="hover:text-foreground transition-colors">
-                {t.auth.forgotPassword}
-              </a>
-            </p>
+            {!isRecoveryMode && (
+              <p className="text-center text-sm text-muted-foreground mt-6">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="hover:text-foreground transition-colors"
+                  disabled={isLoading}
+                >
+                  {t.auth.forgotPassword}
+                </button>
+              </p>
+            )}
+            
+            {isRecoveryMode && (
+              <p className="text-center text-sm text-muted-foreground mt-6">
+                <Link to="/connexion" className="hover:text-foreground transition-colors">
+                  {t.common.back}
+                </Link>
+              </p>
+            )}
           </motion.form>
         </motion.div>
       </div>

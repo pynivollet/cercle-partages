@@ -36,6 +36,7 @@ export const translations = {
       accountCreated: "Compte créé avec succès",
       loginSuccess: "Connexion réussie",
       logoutSuccess: "Déconnexion réussie",
+      resetPasswordSuccess: "Email de réinitialisation envoyé",
       error: "Une erreur est survenue",
       emailConfirmationTitle: "Vérifiez votre boîte mail",
       emailConfirmationMessage:
@@ -297,6 +298,7 @@ export const translations = {
       accountCreated: "Account created successfully",
       loginSuccess: "Login successful",
       logoutSuccess: "Logged out successfully",
+      resetPasswordSuccess: "Reset password email sent",
       error: "An error occurred",
       emailConfirmationTitle: "Account created with success",
       emailConfirmationMessage: "Your account has been created successfully.",

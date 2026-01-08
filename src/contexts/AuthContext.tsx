@@ -16,6 +16,7 @@ interface AuthContextType {
   isPresenter: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
   refreshProfile: () => Promise<void>;
   handleAuthError: (error: unknown) => void;
 }
@@ -237,6 +238,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     clearAuthState();
   };
 
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/connexion?type=recovery`,
+    });
+    return { error: error as Error | null };
+  };
+
   const isAdmin = roles.includes("admin");
   const isPresenter = roles.includes("presenter") || (profile?.is_presenter ?? false);
 
@@ -255,6 +263,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isPresenter,
         signIn,
         signOut,
+        resetPassword,
         refreshProfile,
         handleAuthError,
       }}
