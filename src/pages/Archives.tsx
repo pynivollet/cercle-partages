@@ -5,16 +5,20 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { getPastEvents, EventWithPresenter } from "@/services/events";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fr, enUS } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface GroupedEvents {
   [year: string]: EventWithPresenter[];
 }
 
 const Archives = () => {
+  const { t, language } = useLanguage();
   const [groupedByYear, setGroupedByYear] = useState<GroupedEvents>({});
   const [loading, setLoading] = useState(true);
+
+  const dateLocale = language === "fr" ? fr : enUS;
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -36,14 +40,14 @@ const Archives = () => {
   }, []);
 
   const formatEventDate = (dateString: string) => {
-    return format(new Date(dateString), "dd MMMM", { locale: fr });
+    return format(new Date(dateString), "dd MMMM", { locale: dateLocale });
   };
 
   const getPresenterName = (presenter: EventWithPresenter["presenter"]) => {
-    if (!presenter) return "Intervenant";
+    if (!presenter) return t.presenter.title;
     const first = (presenter.first_name ?? "").trim();
     const last = (presenter.last_name ?? "").trim();
-    return `${first} ${last}`.trim() || "Intervenant";
+    return `${first} ${last}`.trim() || t.presenter.title;
   };
 
   return (
@@ -58,14 +62,13 @@ const Archives = () => {
             className="mb-16"
           >
             <p className="font-sans text-sm tracking-widest uppercase text-muted-foreground mb-4">
-              Archives
+              {t.archives.title}
             </p>
             <h1 className="text-headline text-foreground">
-              Rencontres passées
+              {t.archives.subtitle}
             </h1>
             <p className="text-lg text-muted-foreground mt-6 max-w-2xl">
-              Retrouvez ici l'ensemble des rencontres organisées par le Cercle Partages. 
-              Chaque présentation est une invitation à la découverte et à la réflexion.
+              {t.archives.description}
             </p>
           </motion.div>
 
@@ -95,7 +98,7 @@ const Archives = () => {
             </div>
           ) : Object.keys(groupedByYear).length === 0 ? (
             <div className="py-12 text-center">
-              <p className="text-muted-foreground">Aucune rencontre passée pour le moment.</p>
+              <p className="text-muted-foreground">{t.archives.noPastEvents}</p>
             </div>
           ) : (
             Object.entries(groupedByYear)

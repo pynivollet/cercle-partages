@@ -1,7 +1,10 @@
 import { motion } from "framer-motion";
 import architectureImage from "@/assets/architecture-detail.jpg";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const Philosophy = () => {
+  const { t } = useLanguage();
+
   return (
     <section className="section-padding">
       <div className="editorial-container">
@@ -14,19 +17,17 @@ const Philosophy = () => {
             transition={{ duration: 0.8 }}
           >
             <p className="font-sans text-sm tracking-widest uppercase text-muted-foreground mb-6">
-              Notre philosophie
+              {t.philosophy.title}
             </p>
             <h2 className="text-headline text-foreground mb-8">
-              Un moment pour écouter et questionner
+              {t.philosophy.headline}
             </h2>
             <div className="space-y-6 text-muted-foreground">
               <p className="text-lg leading-relaxed">
-                Le Cercle Partages réunit des esprits curieux autour de conversations authentiques. 
-                Ni réseau social, ni simple événementiel — un espace de transmission et d'écoute.
+                {t.philosophy.description1}
               </p>
               <p className="text-lg leading-relaxed">
-                Chaque rencontre est une invitation à découvrir un sujet, une personnalité, 
-                une vision. Le tout accompagné d'un repas partagé, dans une atmosphère conviviale et détendue.
+                {t.philosophy.description2}
               </p>
             </div>
           </motion.div>

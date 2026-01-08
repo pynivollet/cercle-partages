@@ -1,15 +1,18 @@
 import { motion } from "framer-motion";
 import heroImage from "@/assets/hero-gathering.jpg";
 import logoImage from "@/assets/hero-background.png";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const Hero = () => {
+  const { t } = useLanguage();
+
   return (
     <section className="relative min-h-screen flex items-center">
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <img
           src={heroImage}
-          alt="Un moment de partage autour d'une table"
+          alt={t.footer.aboutText}
           className="w-full h-full object-cover object-center opacity-40"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background" />
@@ -41,7 +44,7 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="text-2xl md:text-3xl font-serif italic text-muted-foreground mb-8"
           >
-            L'appétit pour l'altérité
+            {t.hero.slogan}
           </motion.p>
 
           <motion.p
@@ -50,7 +53,7 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.6 }}
             className="text-xl md:text-2xl font-serif italic text-muted-foreground leading-relaxed max-w-xl"
           >
-            Un cercle d'échanges autour de l'architecture, l'écologie, l'art, la culture et la vie professionnelle.
+            {t.hero.description}
           </motion.p>
 
           <motion.div
@@ -63,7 +66,7 @@ const Hero = () => {
               href="#calendar"
               className="font-sans text-sm tracking-wide text-foreground border-b border-foreground/30 pb-1 hover:border-foreground transition-colors"
             >
-              Découvrir les prochaines rencontres
+              {t.hero.discoverEvents}
             </a>
           </motion.div>
         </div>

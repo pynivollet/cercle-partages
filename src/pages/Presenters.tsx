@@ -7,10 +7,12 @@ import { getPresenters } from "@/services/profiles";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Database } from "@/integrations/supabase/types";
 import { getProfileDisplayName, getProfileInitials } from "@/lib/profileName";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 const Presenters = () => {
+  const { t } = useLanguage();
   const [presenters, setPresenters] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,10 +44,10 @@ const Presenters = () => {
             className="mb-12"
           >
             <h1 className="font-serif text-4xl md:text-5xl text-foreground mb-4">
-              Intervenants
+              {t.presenters.title}
             </h1>
             <p className="text-muted-foreground max-w-2xl">
-              Découvrez les personnalités qui animent nos rencontres et partagent leurs expertises.
+              {t.presenters.subtitle}
             </p>
           </motion.div>
 
@@ -58,7 +60,7 @@ const Presenters = () => {
             </div>
           ) : presenters.length === 0 ? (
             <p className="text-muted-foreground text-center py-12">
-              Aucun intervenant pour le moment.
+              {t.presenters.noPresenters}
             </p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

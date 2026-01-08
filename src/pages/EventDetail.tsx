@@ -22,11 +22,13 @@ import {
 import { getEventDocuments, EventDocument } from "@/services/eventDocuments";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fr, enUS } from "date-fns/locale";
 import { toast } from "sonner";
 import { FileText, Users } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const EventDetail = () => {
+  const { t, language } = useLanguage();
   const { id } = useParams();
   const { user } = useAuth();
   const [event, setEvent] = useState<EventDetails | null>(null);
@@ -34,6 +36,8 @@ const EventDetail = () => {
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
   const [attendeeCount, setAttendeeCount] = useState<string>("1");
+
+  const dateLocale = language === "fr" ? fr : enUS;
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -58,7 +62,7 @@ const EventDetail = () => {
 
   const handleRegister = async () => {
     if (!user) {
-      toast.error("Veuillez vous connecter pour vous inscrire");
+      toast.error(t.auth.login);
       return;
     }
     if (!event) return;
@@ -70,10 +74,10 @@ const EventDetail = () => {
       if (capacityError) {
         toast.error(error.message);
       } else {
-        toast.error("Erreur lors de l'inscription");
+        toast.error(t.events.registrationError);
       }
     } else {
-      toast.success("Inscription confirmée !");
+      toast.success(t.events.registrationSuccess);
       // Refresh event data via RPC
       const { data } = await getEventById(event.id);
       if (data) setEvent(data);
@@ -88,9 +92,9 @@ const EventDetail = () => {
     const { error } = await cancelRegistration(event.id);
 
     if (error) {
-      toast.error("Erreur lors de l'annulation");
+      toast.error(t.auth.error);
     } else {
-      toast.success("Inscription annulée");
+      toast.success(t.events.unregistrationSuccess);
       // Refresh event data via RPC
       const { data } = await getEventById(event.id);
       if (data) setEvent(data);
@@ -99,17 +103,17 @@ const EventDetail = () => {
   };
 
   const formatEventDate = (dateString: string) => {
-    return format(new Date(dateString), "dd MMMM yyyy", { locale: fr });
+    return format(new Date(dateString), "dd MMMM yyyy", { locale: dateLocale });
   };
 
   const formatEventTime = (dateString: string) => {
-    return format(new Date(dateString), "HH'h'mm", { locale: fr });
+    return format(new Date(dateString), "HH'h'mm", { locale: dateLocale });
   };
 
   const getPresenterName = (presenter: EventPresenterInfo) => {
     const firstName = presenter.first_name || "";
     const lastName = presenter.last_name || "";
-    return `${firstName} ${lastName}`.trim() || "Présentateur";
+    return `${firstName} ${lastName}`.trim() || t.presenter.title;
   };
 
   const getInitials = (presenter: EventPresenterInfo) => {
@@ -150,9 +154,9 @@ const EventDetail = () => {
         <Header />
         <main className="pt-24 md:pt-32">
           <div className="editorial-container section-padding text-center">
-            <h1 className="text-2xl text-foreground mb-4">Rencontre non trouvée</h1>
+            <h1 className="text-2xl text-foreground mb-4">{t.common.error}</h1>
             <Link to="/" className="text-primary hover:underline">
-              Retour à l'accueil
+              {t.nav.home}
             </Link>
           </div>
         </main>
@@ -177,7 +181,7 @@ const EventDetail = () => {
             to="/evenements"
             className="font-sans text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            ← Retour aux évènements
+            ← {t.events.backToEvents}
           </Link>
         </div>
 
@@ -219,14 +223,14 @@ const EventDetail = () => {
               )}
 
               <div className="mt-12 pt-8 border-t border-border">
-                <h3 className="font-serif text-xl mb-4">Format</h3>
-                <p className="text-muted-foreground">Présentation suivie d'un échange et d'un repas partagé</p>
+                <h3 className="font-serif text-xl mb-4">{t.events.format}</h3>
+                <p className="text-muted-foreground">{t.events.formatDescription}</p>
               </div>
 
               {/* Documents section - only for authenticated users */}
               {user && documents.length > 0 && (
                 <div className="mt-12 pt-8 border-t border-border">
-                  <h3 className="font-serif text-xl mb-4">Documentation</h3>
+                  <h3 className="font-serif text-xl mb-4">{t.events.documentation}</h3>
                   <div className="space-y-3">
                     {documents.map((doc) => (
                       <a
@@ -239,7 +243,7 @@ const EventDetail = () => {
                         <FileText className="w-6 h-6 text-destructive shrink-0" />
                         <div className="min-w-0">
                           <p className="font-medium truncate">{doc.file_name}</p>
-                          <p className="text-xs text-muted-foreground">PDF • Cliquez pour ouvrir</p>
+                          <p className="text-xs text-muted-foreground">{t.events.clickToOpen}</p>
                         </div>
                       </a>
                     ))}
@@ -258,7 +262,7 @@ const EventDetail = () => {
               <div className="sticky top-32 space-y-8">
                 {/* Date & Time */}
                 <div className="p-6 bg-muted/50 border border-border">
-                  <p className="font-sans text-sm text-muted-foreground mb-2">Date et heure</p>
+                  <p className="font-sans text-sm text-muted-foreground mb-2">{t.events.dateAndTime}</p>
                   <p className="font-serif text-2xl text-foreground capitalize">
                     {formatEventDate(event.event_date)}
                   </p>
@@ -267,9 +271,9 @@ const EventDetail = () => {
 
                 {/* Location */}
                 <div className="p-6 bg-muted/50 border border-border">
-                  <p className="font-sans text-sm text-muted-foreground mb-2">Lieu</p>
+                  <p className="font-sans text-sm text-muted-foreground mb-2">{t.events.location}</p>
                   <p className="font-serif text-lg text-foreground">{event.location || "À confirmer"}</p>
-                  <p className="font-sans text-sm text-muted-foreground mt-1">Adresse communiquée aux inscrits</p>
+                  <p className="font-sans text-sm text-muted-foreground mt-1">{t.events.addressPrivate}</p>
                 </div>
 
                 {/* CTA */}
@@ -280,8 +284,10 @@ const EventDetail = () => {
                         <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
                           <p className="text-sm text-foreground font-medium flex items-center gap-2">
                             <Users className="w-4 h-4" />
-                            Inscrit pour {event.user_registration?.attendee_count || 1} personne
-                            {(event.user_registration?.attendee_count || 1) > 1 ? "s" : ""}
+                            {language === "fr" 
+                              ? `Inscrit pour ${event.user_registration?.attendee_count || 1} personne${(event.user_registration?.attendee_count || 1) > 1 ? "s" : ""}`
+                              : `Registered for ${event.user_registration?.attendee_count || 1} person${(event.user_registration?.attendee_count || 1) > 1 ? "s" : ""}`
+                            }
                           </p>
                         </div>
                         <Button
@@ -291,7 +297,7 @@ const EventDetail = () => {
                           onClick={handleCancelRegistration}
                           disabled={registering}
                         >
-                          {registering ? "Annulation..." : "Annuler mon inscription"}
+                          {registering ? t.common.loading : t.events.unregister}
                         </Button>
                       </div>
                     ) : (
@@ -306,7 +312,7 @@ const EventDetail = () => {
                             <SelectContent className="bg-background border border-border z-50">
                               {[1, 2, 3, 4, 5, 6].map((num) => (
                                 <SelectItem key={num} value={num.toString()}>
-                                  {num} personne{num > 1 ? "s" : ""}
+                                  {num} {language === "fr" ? `personne${num > 1 ? "s" : ""}` : `person${num > 1 ? "s" : ""}`}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -319,14 +325,14 @@ const EventDetail = () => {
                           onClick={handleRegister}
                           disabled={registering}
                         >
-                          {registering ? "Inscription..." : "S'inscrire à la rencontre"}
+                          {registering ? t.common.loading : t.events.register}
                         </Button>
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground text-center">
                       {event.participant_limit
-                        ? `${event.registrations_count || 0}/${event.participant_limit} inscrits`
-                        : "Places limitées • Sur invitation"}
+                        ? `${event.registrations_count || 0}/${event.participant_limit} ${t.events.registered}`
+                        : `${t.events.limitedPlaces} • ${t.events.byInvitation}`}
                     </p>
                   </>
                 )}
@@ -339,7 +345,7 @@ const EventDetail = () => {
         {presenters.length > 0 && (
           <section className="bg-muted/30 section-padding">
             <div className="editorial-container">
-              <p className="font-sans text-sm tracking-widest uppercase text-muted-foreground mb-8">Présenté par</p>
+              <p className="font-sans text-sm tracking-widest uppercase text-muted-foreground mb-8">{t.events.presentedBy}</p>
               <div className="space-y-16">
                 {presenters.map((presenter, index) => (
                   <motion.div
@@ -378,7 +384,7 @@ const EventDetail = () => {
                           to={`/presentateur/${presenter.id}`}
                           className="font-sans text-sm text-foreground border-b border-foreground/30 pb-1 hover:border-foreground transition-colors"
                         >
-                          Découvrir son profil complet
+                          {t.events.discoverProfile}
                         </Link>
                       </div>
                     </div>

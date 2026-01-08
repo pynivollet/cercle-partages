@@ -8,8 +8,9 @@ import { getProfileById } from "@/services/profiles";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fr, enUS } from "date-fns/locale";
 import { getProfileDisplayName, getProfileInitials } from "@/lib/profileName";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -20,10 +21,13 @@ interface Presentation {
 }
 
 const PresenterProfile = () => {
+  const { t, language } = useLanguage();
   const { id } = useParams();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [presentations, setPresentations] = useState<Presentation[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const dateLocale = language === "fr" ? fr : enUS;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,7 +61,7 @@ const PresenterProfile = () => {
 
 
   const formatPresentationDate = (dateString: string) => {
-    return format(new Date(dateString), "dd MMMM yyyy", { locale: fr });
+    return format(new Date(dateString), "dd MMMM yyyy", { locale: dateLocale });
   };
 
   if (loading) {
@@ -94,9 +98,9 @@ const PresenterProfile = () => {
         <Header />
         <main className="pt-24 md:pt-32">
           <div className="editorial-container section-padding text-center">
-            <h1 className="text-2xl text-foreground mb-4">Profil non trouvé</h1>
+            <h1 className="text-2xl text-foreground mb-4">{t.common.error}</h1>
             <Link to="/" className="text-primary hover:underline">
-              Retour à l'accueil
+              {t.nav.home}
             </Link>
           </div>
         </main>
@@ -115,7 +119,7 @@ const PresenterProfile = () => {
             to="/intervenants"
             className="font-sans text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            ← Retour aux intervenants
+            ← {t.presenter.back}
           </Link>
         </div>
 
@@ -153,7 +157,7 @@ const PresenterProfile = () => {
               className="lg:col-span-2"
             >
               <p className="font-sans text-sm tracking-widest uppercase text-muted-foreground mb-4">
-                Intervenant
+                {t.presenter.title}
               </p>
               <h1 className="text-headline text-foreground mb-12">
                 {getPresenterName()}
@@ -172,7 +176,7 @@ const PresenterProfile = () => {
               {presentations.length > 0 && (
                 <div className="pt-12 border-t border-border">
                   <h3 className="font-serif text-xl mb-6">
-                    Présentations au Cercle
+                    {t.presenter.presentations}
                   </h3>
                   <div className="space-y-4">
                     {presentations.map((presentation) => (

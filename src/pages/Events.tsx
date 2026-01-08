@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fr, enUS } from "date-fns/locale";
 import { ArrowUpDown, Calendar, List, MapPin, Table2 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -24,12 +24,14 @@ type SortOrder = "asc" | "desc";
 type ViewMode = "list" | "table";
 
 const Events = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [events, setEvents] = useState<EventWithPresenter[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+
+  const dateLocale = language === "fr" ? fr : enUS;
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -139,10 +141,10 @@ const Events = () => {
             {/* Date */}
             <div className="flex-shrink-0 flex sm:flex-col items-center sm:items-start gap-2 sm:gap-0 sm:w-20">
               <div className="text-xl sm:text-2xl font-serif text-foreground">
-                {format(new Date(event.event_date), "dd", { locale: fr })}
+                {format(new Date(event.event_date), "dd", { locale: dateLocale })}
               </div>
               <div className="text-xs sm:text-sm text-muted-foreground uppercase tracking-wide">
-                {format(new Date(event.event_date), "MMM yyyy", { locale: fr })}
+                {format(new Date(event.event_date), "MMM yyyy", { locale: dateLocale })}
               </div>
             </div>
 
@@ -208,11 +210,11 @@ const Events = () => {
               <TabsList>
                 <TabsTrigger value="list" className="flex items-center gap-2">
                   <List className="w-4 h-4" />
-                  <span className="hidden sm:inline">Liste</span>
+                  <span className="hidden sm:inline">{t.events.viewList}</span>
                 </TabsTrigger>
                 <TabsTrigger value="table" className="flex items-center gap-2">
                   <Table2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Tableau</span>
+                  <span className="hidden sm:inline">{t.events.viewTable}</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -233,7 +235,7 @@ const Events = () => {
                 <div className="flex items-center gap-4 mb-6">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-primary" />
-                    <h2 className="font-serif text-2xl text-foreground">Événements à venir</h2>
+                    <h2 className="font-serif text-2xl text-foreground">{t.calendar.upcomingSection}</h2>
                   </div>
                   <span className="text-sm text-muted-foreground bg-primary/10 text-primary px-3 py-1 rounded-full">
                     {upcomingEvents.length}
@@ -242,7 +244,7 @@ const Events = () => {
                 
                 {upcomingEvents.length === 0 ? (
                   <p className="text-muted-foreground py-8 text-center border border-dashed border-border rounded-lg">
-                    Aucun événement à venir pour le moment
+                    {t.calendar.noUpcoming}
                   </p>
                 ) : (
                   <div className="space-y-3">
@@ -257,7 +259,7 @@ const Events = () => {
               {pastEvents.length > 0 && (
                 <section>
                   <div className="flex items-center gap-4 mb-6 pt-8 border-t border-border">
-                    <h2 className="font-serif text-2xl text-muted-foreground">Événements passés</h2>
+                    <h2 className="font-serif text-2xl text-muted-foreground">{t.calendar.pastSection}</h2>
                     <span className="text-sm bg-muted text-muted-foreground px-3 py-1 rounded-full">
                       {pastEvents.length}
                     </span>
@@ -282,11 +284,11 @@ const Events = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <SortableHeader field="date">Date</SortableHeader>
-                    <TableHead>Statut</TableHead>
-                    <SortableHeader field="category">Catégorie</SortableHeader>
-                    <SortableHeader field="title">Titre</SortableHeader>
-                    <SortableHeader field="presenter">Intervenant(s)</SortableHeader>
+                    <SortableHeader field="date">{t.events.dateAndTime}</SortableHeader>
+                    <TableHead>{t.admin.status}</TableHead>
+                    <SortableHeader field="category">{t.categories.title}</SortableHeader>
+                    <SortableHeader field="title">{t.events.titleLabel}</SortableHeader>
+                    <SortableHeader field="presenter">{t.nav.presenters}</SortableHeader>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -304,16 +306,16 @@ const Events = () => {
                         onClick={() => window.location.href = `/rencontre/${event.id}`}
                       >
                         <TableCell className="font-medium whitespace-nowrap">
-                          {format(new Date(event.event_date), "dd MMM yyyy", { locale: fr })}
+                          {format(new Date(event.event_date), "dd MMM yyyy", { locale: dateLocale })}
                         </TableCell>
                         <TableCell>
                           {isUpcoming(event.event_date) ? (
                             <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full whitespace-nowrap">
-                              À venir
+                              {t.events.statusUpcoming}
                             </span>
                           ) : (
                             <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded-full whitespace-nowrap">
-                              Passé
+                              {t.events.statusPast}
                             </span>
                           )}
                         </TableCell>

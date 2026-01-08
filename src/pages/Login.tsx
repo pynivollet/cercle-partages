@@ -19,7 +19,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { signIn, user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   // Login form state
   const [email, setEmail] = useState("");
@@ -81,7 +81,7 @@ const Login = () => {
               {t.auth.login}
             </h2>
             <p className="text-muted-foreground text-sm">
-              Accès réservé aux membres invités
+              {language === "fr" ? "Accès réservé aux membres invités" : "Access reserved for invited members"}
             </p>
           </div>
 

@@ -69,14 +69,19 @@ export const translations = {
       slogan: "L'appétit pour l'altérité",
       description:
         "Un cercle d'échanges autour de l'architecture, l'écologie, l'art, la culture et la vie professionnelle.",
+      discoverEvents: "Découvrir les prochaines rencontres",
     },
     // Calendar
     calendar: {
       title: "Calendrier",
       upcoming: "Prochaines rencontres",
       noEvents: "Aucune rencontre prévue pour le moment",
+      noUpcoming: "Aucun événement à venir pour le moment",
       viewArchives: "Voir les archives",
       presentedBy: "Une présentation par",
+      allEvents: "Voir tous les événements",
+      upcomingSection: "Événements à venir",
+      pastSection: "Événements passés",
     },
     // Events
     events: {
@@ -88,6 +93,7 @@ export const translations = {
       limitedPlaces: "Places limitées",
       byInvitation: "Sur invitation",
       format: "Format",
+      formatDescription: "Présentation suivie d'un échange et d'un repas partagé",
       dateAndTime: "Date et heure",
       location: "Lieu",
       addressPrivate: "Adresse communiquée aux inscrits",
@@ -99,6 +105,13 @@ export const translations = {
       unregistrationSuccess: "Inscription annulée",
       spotsLeft: "places restantes",
       spots: "places",
+      documentation: "Documentation",
+      clickToOpen: "PDF • Cliquez pour ouvrir",
+      viewList: "Liste",
+      viewTable: "Tableau",
+      statusUpcoming: "À venir",
+      statusPast: "Passé",
+      titleLabel: "Titre",
     },
     // Archives
     archives: {
@@ -108,6 +121,13 @@ export const translations = {
         "Retrouvez ici l'ensemble des rencontres organisées par le Cercle Partages. Chaque présentation est une invitation à la découverte et à la réflexion.",
       viewPresentation: "Voir la présentation",
       noPresentations: "Aucune présentation archivée",
+      noPastEvents: "Aucune rencontre passée pour le moment.",
+    },
+    // Presenters
+    presenters: {
+      title: "Intervenants",
+      subtitle: "Découvrez les personnalités qui animent nos rencontres et partagent leurs expertises.",
+      noPresenters: "Aucun intervenant pour le moment.",
     },
     // Presenter
     presenter: {
@@ -119,8 +139,9 @@ export const translations = {
     // Philosophy
     philosophy: {
       title: "Notre philosophie",
-      description:
-        "Le Cercle Partages réunit des esprits curieux autour de rencontres intimes. Chaque soirée est une invitation à l'écoute, au questionnement, et au plaisir d'être ensemble.",
+      headline: "Un moment pour écouter et questionner",
+      description1: "Le Cercle Partages réunit des esprits curieux autour de conversations authentiques. Ni réseau social, ni simple événementiel — un espace de transmission et d'écoute.",
+      description2: "Chaque rencontre est une invitation à découvrir un sujet, une personnalité, une vision. Le tout accompagné d'un repas partagé, dans une atmosphère conviviale et détendue.",
       values: {
         exchange: "Échange",
         exchangeDesc: "Un espace de dialogue authentique",
@@ -209,6 +230,8 @@ export const translations = {
       contact: "Contact",
       rights: "Tous droits réservés",
       privacy: "Confidentialité",
+      invitationOnly: "Le Cercle Partages est accessible sur invitation uniquement.",
+      contactPerson: "Pour toute demande, veuillez contacter Bernard Nivollet à bnivollet@gmail.com.",
     },
     // Months
     months: {
@@ -305,14 +328,19 @@ export const translations = {
     hero: {
       slogan: "An appetite for otherness",
       description: "A circle of exchanges around architecture, ecology, art, culture and professional life.",
+      discoverEvents: "Discover upcoming meetings",
     },
     // Calendar
     calendar: {
       title: "Calendar",
       upcoming: "Upcoming events",
       noEvents: "No events scheduled at the moment",
+      noUpcoming: "No upcoming events at the moment",
       viewArchives: "View archives",
       presentedBy: "A presentation by",
+      allEvents: "View all events",
+      upcomingSection: "Upcoming events",
+      pastSection: "Past events",
     },
     // Events
     events: {
@@ -324,6 +352,7 @@ export const translations = {
       limitedPlaces: "Limited places",
       byInvitation: "By invitation",
       format: "Format",
+      formatDescription: "Presentation followed by an exchange and a shared meal",
       dateAndTime: "Date and time",
       location: "Location",
       addressPrivate: "Address shared with registered attendees",
@@ -335,6 +364,13 @@ export const translations = {
       unregistrationSuccess: "Registration cancelled",
       spotsLeft: "spots left",
       spots: "spots",
+      documentation: "Documentation",
+      clickToOpen: "PDF • Click to open",
+      viewList: "List",
+      viewTable: "Table",
+      statusUpcoming: "Upcoming",
+      statusPast: "Past",
+      titleLabel: "Title",
     },
     // Archives
     archives: {
@@ -344,6 +380,13 @@ export const translations = {
         "Find here all the events organized by Cercle Partages. Each presentation is an invitation to discovery and reflection.",
       viewPresentation: "View presentation",
       noPresentations: "No archived presentations",
+      noPastEvents: "No past events for the moment.",
+    },
+    // Presenters
+    presenters: {
+      title: "Presenters",
+      subtitle: "Discover the personalities who host our meetings and share their expertise.",
+      noPresenters: "No presenters at the moment.",
     },
     // Presenter
     presenter: {
@@ -355,8 +398,9 @@ export const translations = {
     // Philosophy
     philosophy: {
       title: "Our philosophy",
-      description:
-        "Cercle Partages brings together curious minds around intimate gatherings. Each evening is an invitation to listen, question, and enjoy being together.",
+      headline: "A moment to listen and question",
+      description1: "Cercle Partages brings together curious minds around authentic conversations. Neither a social network nor a simple event space — a place for transmission and listening.",
+      description2: "Each meeting is an invitation to discover a subject, a personality, a vision. All accompanied by a shared meal, in a friendly and relaxed atmosphere.",
       values: {
         exchange: "Exchange",
         exchangeDesc: "A space for authentic dialogue",
@@ -445,6 +489,8 @@ export const translations = {
       contact: "Contact",
       rights: "All rights reserved",
       privacy: "Privacy",
+      invitationOnly: "Cercle Partages is accessible by invitation only.",
+      contactPerson: "For any request, please contact Bernard Nivollet at bnivollet@gmail.com.",
     },
     // Months
     months: {

@@ -3,14 +3,16 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getUpcomingEvents, EventWithPresenter } from "@/services/events";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fr, enUS } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 const EventCalendar = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [events, setEvents] = useState<EventWithPresenter[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const dateLocale = language === "fr" ? fr : enUS;
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -26,17 +28,17 @@ const EventCalendar = () => {
   const formatEventDate = (dateString: string) => {
     const date = new Date(dateString);
     return {
-      day: format(date, "dd", { locale: fr }),
-      month: format(date, "MMMM", { locale: fr }),
-      year: format(date, "yyyy", { locale: fr }),
+      day: format(date, "dd", { locale: dateLocale }),
+      month: format(date, "MMMM", { locale: dateLocale }),
+      year: format(date, "yyyy", { locale: dateLocale }),
     };
   };
 
   const getPresenterName = (presenter: EventWithPresenter["presenter"]) => {
-    if (!presenter) return "Intervenant à confirmer";
+    if (!presenter) return t.presenter.title;
     const first = (presenter.first_name ?? "").trim();
     const last = (presenter.last_name ?? "").trim();
-    return `${first} ${last}`.trim() || "Intervenant";
+    return `${first} ${last}`.trim() || t.presenter.title;
   };
 
   const getCategoryLabel = (category: string | null) => {
@@ -55,10 +57,10 @@ const EventCalendar = () => {
           className="mb-16"
         >
           <p className="font-sans text-sm tracking-widest uppercase text-muted-foreground mb-4">
-            Calendrier
+            {t.calendar.title}
           </p>
           <h2 className="text-headline text-foreground">
-            Prochaines rencontres
+            {t.calendar.upcoming}
           </h2>
         </motion.div>
 
@@ -84,7 +86,7 @@ const EventCalendar = () => {
             ))
           ) : events.length === 0 ? (
             <div className="py-12 text-center">
-              <p className="text-muted-foreground">Aucune rencontre à venir pour le moment.</p>
+              <p className="text-muted-foreground">{t.calendar.noEvents}</p>
             </div>
           ) : (
             events.map((event, index) => {
@@ -123,7 +125,7 @@ const EventCalendar = () => {
                           {event.title}
                         </h3>
                         <p className="font-sans text-sm text-muted-foreground">
-                          Une présentation par {getPresenterName(event.presenter)}
+                          {t.calendar.presentedBy} {getPresenterName(event.presenter)}
                         </p>
                       </div>
 
@@ -154,7 +156,7 @@ const EventCalendar = () => {
             to="/evenements"
             className="font-sans text-sm tracking-wide text-muted-foreground hover:text-foreground transition-colors"
           >
-            Voir tous les événements →
+            {language === "fr" ? "Voir tous les événements →" : "View all events →"}
           </Link>
         </motion.div>
       </div>
