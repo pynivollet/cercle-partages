@@ -71,6 +71,25 @@ serve(async (req) => {
       });
     }
 
+    // Validation regex stricte de l'email (RFC 5322 simplifié)
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+    if (!emailRegex.test(email)) {
+      return new Response(JSON.stringify({ error: "Invalid email format" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // TODO: Rate Limiting
+    // Pour implémenter un rate-limiting, vous pouvez:
+    // 1. Utiliser une table Supabase pour tracker les invitations par IP/admin
+    // 2. Utiliser un service externe comme Upstash Redis
+    // 3. Implémenter un compteur en mémoire avec TTL
+    // Exemple de structure:
+    // const rateLimitKey = `invite:${user.id}`;
+    // const { count, resetAt } = await checkRateLimit(rateLimitKey, { limit: 10, windowMs: 60000 });
+    // if (count > limit) return new Response(JSON.stringify({ error: "Rate limit exceeded" }), { status: 429, ... });
+
     // The site URL for redirect
     const redirectTo = "https://cerclepartages.org/accept-invitation";
 
