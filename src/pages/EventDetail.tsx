@@ -222,10 +222,6 @@ const EventDetail = () => {
                 </div>
               )}
 
-              <div className="mt-12 pt-8 border-t border-border">
-                <h3 className="font-serif text-xl mb-4">{t.events.format}</h3>
-                <p className="text-muted-foreground">{t.events.formatDescription}</p>
-              </div>
 
               {/* Documents section - only for authenticated users */}
               {user && documents.length > 0 && (
