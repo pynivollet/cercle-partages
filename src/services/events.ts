@@ -1,11 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
+import { Database, Json } from "@/integrations/supabase/types";
 
 type Event = Database["public"]["Tables"]["events"]["Row"];
 type EventInsert = Database["public"]["Tables"]["events"]["Insert"];
 type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
+type EventStatus = Database["public"]["Enums"]["event_status"];
+type EventCategory = Database["public"]["Enums"]["event_category"];
 
-// Types for RPC responses
+// Types for RPC responses - alignés avec les fonctions RPC Supabase
 export interface EventPresenterInfo {
   id: string;
   first_name: string | null;
@@ -29,8 +31,8 @@ export interface EventDetails {
   event_date: string;
   location: string | null;
   topic: string | null;
-  category: string | null;
-  status: string;
+  category: EventCategory | null;
+  status: EventStatus;
   participant_limit: number | null;
   presenter_id: string | null;
   created_at: string;
@@ -50,8 +52,8 @@ export interface EventWithPresenter {
   event_date: string;
   location: string | null;
   topic: string | null;
-  category: string | null;
-  status: string;
+  category: EventCategory | null;
+  status: EventStatus;
   participant_limit: number | null;
   presenter_id: string | null;
   created_at: string;
@@ -64,6 +66,12 @@ export interface RegistrationResult {
   message?: string;
   remaining_capacity?: number;
   registration?: UserRegistration;
+}
+
+// Helper pour typer les réponses RPC JSON
+function parseRpcResponse<T>(data: Json | null): T | null {
+  if (data === null) return null;
+  return data as T;
 }
 
 // =============================================================================
@@ -80,8 +88,7 @@ export const getPublishedEvents = async (): Promise<{ data: EventWithPresenter[]
     return { data: null, error };
   }
 
-  // Cast through unknown to handle Supabase's generic Json type
-  return { data: (data as unknown) as EventWithPresenter[] | null, error: null };
+  return { data: parseRpcResponse<EventWithPresenter[]>(data), error: null };
 };
 
 /**
@@ -94,7 +101,7 @@ export const getUpcomingEvents = async (): Promise<{ data: EventWithPresenter[] 
     return { data: null, error };
   }
 
-  return { data: (data as unknown) as EventWithPresenter[] | null, error: null };
+  return { data: parseRpcResponse<EventWithPresenter[]>(data), error: null };
 };
 
 /**
@@ -107,7 +114,7 @@ export const getPastEvents = async (): Promise<{ data: EventWithPresenter[] | nu
     return { data: null, error };
   }
 
-  return { data: (data as unknown) as EventWithPresenter[] | null, error: null };
+  return { data: parseRpcResponse<EventWithPresenter[]>(data), error: null };
 };
 
 /**
@@ -121,7 +128,7 @@ export const getEventById = async (id: string): Promise<{ data: EventDetails | n
     return { data: null, error };
   }
 
-  return { data: (data as unknown) as EventDetails | null, error: null };
+  return { data: parseRpcResponse<EventDetails>(data), error: null };
 };
 
 /**
@@ -141,13 +148,13 @@ export const registerForEvent = async (
     return { data: null, error };
   }
 
-  const result = (data as unknown) as RegistrationResult;
+  const result = parseRpcResponse<RegistrationResult>(data);
 
-  if (!result.success) {
+  if (!result || !result.success) {
     return {
       data: null,
-      error: new Error(result.message || "Erreur lors de l'inscription"),
-      capacityError: result.error === "CAPACITY_EXCEEDED",
+      error: new Error(result?.message || "Erreur lors de l'inscription"),
+      capacityError: result?.error === "CAPACITY_EXCEEDED",
     };
   }
 

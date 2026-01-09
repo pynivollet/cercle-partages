@@ -60,9 +60,14 @@ const Signup = () => {
             return;
           }
 
-          if (data.user) {
+        if (data.user) {
             setAccessToken(accessToken);
             setUserEmail(data.user.email || null);
+            
+            // Nettoyer l'URL pour enlever les tokens de l'historique du navigateur
+            if (window.history.replaceState) {
+              window.history.replaceState(null, "", window.location.pathname);
+            }
           }
         } catch (e) {
           console.error("Error setting session:", e);
