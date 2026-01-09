@@ -44,12 +44,12 @@ const Header = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <ul className="hidden md:flex items-center gap-8">
+          <ul className="hidden lg:flex items-center gap-6 xl:gap-8">
             {navItems.map((item) => (
               <li key={item.path}>
                 <Link
                   to={item.path}
-                  className={`text-sm font-sans tracking-wide transition-colors relative ${
+                  className={`text-sm font-sans tracking-wide transition-colors relative whitespace-nowrap ${
                     location.pathname === item.path
                       ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground"
@@ -70,7 +70,7 @@ const Header = () => {
               <li>
                 <Link
                   to="/admin"
-                  className={`text-sm font-sans tracking-wide transition-colors relative ${
+                  className={`text-sm font-sans tracking-wide transition-colors relative whitespace-nowrap ${
                     location.pathname === "/admin"
                       ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground"
@@ -102,7 +102,7 @@ const Header = () => {
             </button>
 
             {/* Desktop Auth */}
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-2">
               {user ? (
                 <>
                   <Link
@@ -134,7 +134,7 @@ const Header = () => {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-foreground"
+              className="lg:hidden p-2 text-foreground"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -151,7 +151,7 @@ const Header = () => {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="md:hidden bg-background border-t border-border/50"
+            className="lg:hidden bg-background border-t border-border/50"
           >
             <div className="editorial-container py-4">
               <ul className="space-y-2">
