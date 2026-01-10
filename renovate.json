@@ -21,6 +21,12 @@
 
   "packageRules": [
     {
+      "matchUpdateTypes": ["major"],
+      "groupName": "all major dependencies",
+      "automerge": false,
+      "labels": ["dependencies", "major"]
+    },
+    {
       "matchUpdateTypes": ["minor"],
       "groupName": "all minor dependencies",
       "automerge": false,
@@ -31,11 +37,6 @@
       "groupName": "all patch dependencies",
       "automerge": true,
       "labels": ["dependencies", "patch", "automerge"]
-    },
-    {
-      "matchUpdateTypes": ["major"],
-      "automerge": false,
-      "labels": ["dependencies", "major"]
     }
   ]
 }
