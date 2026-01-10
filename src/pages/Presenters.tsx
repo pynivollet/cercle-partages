@@ -27,9 +27,6 @@ const Presenters = () => {
     fetchPresenters();
   }, []);
 
-  const getInitials = (profile: Profile) => getProfileInitials(profile);
-
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -87,7 +84,7 @@ const Presenters = () => {
                             />
                           ) : (
                             <span className="text-2xl font-serif text-muted-foreground">
-                              {getInitials(presenter)}
+                              {getProfileInitials(presenter)}
                             </span>
                           )}
                         </div>

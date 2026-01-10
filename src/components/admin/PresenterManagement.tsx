@@ -29,6 +29,7 @@ import { updateProfile, uploadPresenterAvatar, deletePresenter } from "@/service
 import { getPresentationsByPresenter } from "@/services/presentations";
 import { Link } from "react-router-dom";
 import { getProfileDisplayName, getProfileInitials } from "@/lib/profileName";
+import { formatShortDate } from "@/lib/dateUtils";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type Presentation = Database["public"]["Tables"]["presentations"]["Row"];
@@ -119,14 +120,6 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
     const { data } = await getPresentationsByPresenter(presenter.id);
     setPresentations(data || []);
     setLoadingPresentations(false);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(language === "fr" ? "fr-FR" : "en-US", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
   };
 
   const handleDeletePresenter = async () => {
@@ -313,7 +306,7 @@ const PresenterManagement = ({ presenters, allProfiles, onPresentersChange }: Pr
                     <p className="font-serif">{presentation.title}</p>
                     <p className="text-sm text-muted-foreground mt-1">
                       <Calendar className="w-3 h-3 inline mr-1" />
-                      {formatDate(presentation.presentation_date)}
+                      {formatShortDate(presentation.presentation_date, language)}
                     </p>
                   </div>
                 ))}

@@ -1,14 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
-import { fr, enUS } from "date-fns/locale";
 import { ArrowUpDown, Calendar, List, MapPin, Table2 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { getPublishedEvents, EventWithPresenter } from "@/services/events";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getProfileDisplayName } from "@/lib/profileName";
+import { formatDay, formatMonth, formatYear, formatShortDate } from "@/lib/dateUtils";
 import {
   Table,
   TableBody,
@@ -31,8 +31,6 @@ const Events = () => {
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
 
-  const dateLocale = language === "fr" ? fr : enUS;
-
   useEffect(() => {
     const fetchEvents = async () => {
       const { data } = await getPublishedEvents();
@@ -52,13 +50,6 @@ const Events = () => {
 
   const isUpcoming = (dateString: string) => {
     return new Date(dateString) >= new Date();
-  };
-
-  const getPresenterName = (presenter: EventWithPresenter["presenter"]) => {
-    if (!presenter) return "";
-    const first = (presenter.first_name ?? "").trim();
-    const last = (presenter.last_name ?? "").trim();
-    return `${first} ${last}`.trim();
   };
 
   // Split and sort events
@@ -97,7 +88,7 @@ const Events = () => {
           comparison = a.title.localeCompare(b.title);
           break;
         case "presenter":
-          comparison = getPresenterName(a.presenter).localeCompare(getPresenterName(b.presenter));
+          comparison = getProfileDisplayName(a.presenter, "").localeCompare(getProfileDisplayName(b.presenter, ""));
           break;
       }
 
@@ -141,10 +132,10 @@ const Events = () => {
             {/* Date */}
             <div className="flex-shrink-0 flex sm:flex-col items-center sm:items-start gap-2 sm:gap-0 sm:w-20">
               <div className="text-xl sm:text-2xl font-serif text-foreground">
-                {format(new Date(event.event_date), "dd", { locale: dateLocale })}
+                {formatDay(event.event_date, language)}
               </div>
               <div className="text-xs sm:text-sm text-muted-foreground uppercase tracking-wide">
-                {format(new Date(event.event_date), "MMM yyyy", { locale: dateLocale })}
+                {formatMonth(event.event_date, language)} {formatYear(event.event_date, language)}
               </div>
             </div>
 
@@ -160,7 +151,7 @@ const Events = () => {
               </h3>
               {event.presenter && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  {getPresenterName(event.presenter)}
+                  {getProfileDisplayName(event.presenter)}
                 </p>
               )}
             </div>
@@ -306,7 +297,7 @@ const Events = () => {
                         onClick={() => window.location.href = `/rencontre/${event.id}`}
                       >
                         <TableCell className="font-medium whitespace-nowrap">
-                          {format(new Date(event.event_date), "dd MMM yyyy", { locale: dateLocale })}
+                          {formatShortDate(event.event_date, language)}
                         </TableCell>
                         <TableCell>
                           {isUpcoming(event.event_date) ? (
@@ -326,7 +317,7 @@ const Events = () => {
                           {event.title}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {getPresenterName(event.presenter)}
+                          {getProfileDisplayName(event.presenter)}
                         </TableCell>
                       </TableRow>
                     ))

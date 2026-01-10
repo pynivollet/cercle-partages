@@ -7,10 +7,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getProfileById } from "@/services/profiles";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
-import { format } from "date-fns";
-import { fr, enUS } from "date-fns/locale";
 import { getProfileDisplayName, getProfileInitials } from "@/lib/profileName";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { formatLongDate } from "@/lib/dateUtils";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -26,8 +25,6 @@ const PresenterProfile = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [presentations, setPresentations] = useState<Presentation[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const dateLocale = language === "fr" ? fr : enUS;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,15 +51,6 @@ const PresenterProfile = () => {
     };
     fetchData();
   }, [id]);
-
-  const getPresenterName = () => getProfileDisplayName(profile);
-
-  const getInitials = () => getProfileInitials(profile);
-
-
-  const formatPresentationDate = (dateString: string) => {
-    return format(new Date(dateString), "dd MMMM yyyy", { locale: dateLocale });
-  };
 
   if (loading) {
     return (
@@ -136,13 +124,13 @@ const PresenterProfile = () => {
                 {profile.avatar_url ? (
                   <img
                     src={profile.avatar_url}
-                    alt={getPresenterName()}
+                    alt={getProfileDisplayName(profile)}
                     className="w-full h-full object-cover grayscale"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                     <span className="text-6xl font-serif">
-                      {getInitials()}
+                      {getProfileInitials(profile)}
                     </span>
                   </div>
                 )}
@@ -160,7 +148,7 @@ const PresenterProfile = () => {
                 {t.presenter.title}
               </p>
               <h1 className="text-headline text-foreground mb-12">
-                {getPresenterName()}
+                {getProfileDisplayName(profile)}
               </h1>
 
               {/* Bio */}
@@ -186,7 +174,7 @@ const PresenterProfile = () => {
                         className="block group py-4 border-b border-border hover:bg-muted/30 transition-colors -mx-4 px-4"
                       >
                         <p className="font-sans text-sm text-muted-foreground mb-1 capitalize">
-                          {formatPresentationDate(presentation.presentation_date)}
+                          {formatLongDate(presentation.presentation_date, language)}
                         </p>
                         <p className="font-serif text-lg text-foreground group-hover:text-primary transition-colors">
                           {presentation.title}

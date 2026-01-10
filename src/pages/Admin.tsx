@@ -32,6 +32,7 @@ import PresenterManagement from "@/components/admin/PresenterManagement";
 import UserManagement from "@/components/admin/UserManagement";
 import EventDocuments from "@/components/admin/EventDocuments";
 import EventForm, { EventFormData } from "@/components/admin/EventForm";
+import { formatShortDate } from "@/lib/dateUtils";
 
 type EventCategory = Database["public"]["Enums"]["event_category"];
 
@@ -303,14 +304,6 @@ const Admin = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("fr-FR", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -496,7 +489,7 @@ const Admin = () => {
                             </span>
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">
-                            {formatDate(event.event_date)} • {event.location || "Lieu à définir"}
+                            {formatShortDate(event.event_date, language)} • {event.location || "Lieu à définir"}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">

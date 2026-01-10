@@ -21,11 +21,11 @@ import {
 } from "@/services/events";
 import { getEventDocuments, EventDocument } from "@/services/eventDocuments";
 import { useAuth } from "@/contexts/AuthContext";
-import { format } from "date-fns";
-import { fr, enUS } from "date-fns/locale";
 import { toast } from "sonner";
 import { FileText, Users } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { getProfileDisplayName, getProfileInitials } from "@/lib/profileName";
+import { formatLongDate, formatTime } from "@/lib/dateUtils";
 
 const EventDetail = () => {
   const { t, language } = useLanguage();
@@ -36,8 +36,6 @@ const EventDetail = () => {
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
   const [attendeeCount, setAttendeeCount] = useState<string>("1");
-
-  const dateLocale = language === "fr" ? fr : enUS;
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -100,26 +98,6 @@ const EventDetail = () => {
       if (data) setEvent(data);
     }
     setRegistering(false);
-  };
-
-  const formatEventDate = (dateString: string) => {
-    return format(new Date(dateString), "dd MMMM yyyy", { locale: dateLocale });
-  };
-
-  const formatEventTime = (dateString: string) => {
-    return format(new Date(dateString), "HH'h'mm", { locale: dateLocale });
-  };
-
-  const getPresenterName = (presenter: EventPresenterInfo) => {
-    const firstName = presenter.first_name || "";
-    const lastName = presenter.last_name || "";
-    return `${firstName} ${lastName}`.trim() || t.presenter.title;
-  };
-
-  const getInitials = (presenter: EventPresenterInfo) => {
-    const firstName = presenter.first_name || "";
-    const lastName = presenter.last_name || "";
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "?";
   };
 
   if (loading) {
@@ -260,9 +238,9 @@ const EventDetail = () => {
                 <div className="p-6 bg-muted/50 border border-border">
                   <p className="font-sans text-sm text-muted-foreground mb-2">{t.events.dateAndTime}</p>
                   <p className="font-serif text-2xl text-foreground capitalize">
-                    {formatEventDate(event.event_date)}
+                    {formatLongDate(event.event_date, language)}
                   </p>
-                  <p className="font-sans text-foreground mt-1">{formatEventTime(event.event_date)}</p>
+                  <p className="font-sans text-foreground mt-1">{formatTime(event.event_date, language)}</p>
                 </div>
 
                 {/* Location */}
@@ -358,12 +336,12 @@ const EventDetail = () => {
                         {presenter.avatar_url ? (
                           <img
                             src={presenter.avatar_url}
-                            alt={getPresenterName(presenter)}
+                            alt={getProfileDisplayName(presenter, t.presenter.title)}
                             className="w-full h-full object-cover grayscale"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                            <span className="text-6xl font-serif">{getInitials(presenter)}</span>
+                            <span className="text-6xl font-serif">{getProfileInitials(presenter)}</span>
                           </div>
                         )}
                       </div>
@@ -371,7 +349,7 @@ const EventDetail = () => {
 
                     {/* Bio */}
                     <div className="md:col-span-2">
-                      <h2 className="font-serif text-3xl text-foreground mb-2">{getPresenterName(presenter)}</h2>
+                      <h2 className="font-serif text-3xl text-foreground mb-2">{getProfileDisplayName(presenter, t.presenter.title)}</h2>
                       {presenter.bio && (
                         <p className="text-lg text-muted-foreground leading-relaxed">{presenter.bio}</p>
                       )}

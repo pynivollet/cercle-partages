@@ -2,17 +2,15 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getUpcomingEvents, EventWithPresenter } from "@/services/events";
-import { format } from "date-fns";
-import { fr, enUS } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { formatDay, formatMonth, formatYear } from "@/lib/dateUtils";
+import { getProfileDisplayName } from "@/lib/profileName";
 
 const EventCalendar = () => {
   const { t, language } = useLanguage();
   const [events, setEvents] = useState<EventWithPresenter[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const dateLocale = language === "fr" ? fr : enUS;
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -24,22 +22,6 @@ const EventCalendar = () => {
     };
     fetchEvents();
   }, []);
-
-  const formatEventDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return {
-      day: format(date, "dd", { locale: dateLocale }),
-      month: format(date, "MMMM", { locale: dateLocale }),
-      year: format(date, "yyyy", { locale: dateLocale }),
-    };
-  };
-
-  const getPresenterName = (presenter: EventWithPresenter["presenter"]) => {
-    if (!presenter) return t.presenter.title;
-    const first = (presenter.first_name ?? "").trim();
-    const last = (presenter.last_name ?? "").trim();
-    return `${first} ${last}`.trim() || t.presenter.title;
-  };
 
   const getCategoryLabel = (category: string | null) => {
     if (!category) return null;
@@ -90,7 +72,6 @@ const EventCalendar = () => {
             </div>
           ) : (
             events.map((event, index) => {
-              const dateInfo = formatEventDate(event.event_date);
               return (
                 <motion.article
                   key={event.id}
@@ -107,10 +88,10 @@ const EventCalendar = () => {
                       {/* Date */}
                       <div className="col-span-3 md:col-span-2">
                         <span className="font-serif text-4xl md:text-5xl text-foreground leading-none">
-                          {dateInfo.day}
+                          {formatDay(event.event_date, language)}
                         </span>
                         <p className="font-sans text-sm text-muted-foreground mt-1 capitalize">
-                          {dateInfo.month}
+                          {formatMonth(event.event_date, language)}
                         </p>
                       </div>
 
@@ -125,7 +106,7 @@ const EventCalendar = () => {
                           {event.title}
                         </h3>
                         <p className="font-sans text-sm text-muted-foreground">
-                          {t.calendar.presentedBy} {getPresenterName(event.presenter)}
+                          {t.calendar.presentedBy} {getProfileDisplayName(event.presenter, t.presenter.title)}
                         </p>
                       </div>
 

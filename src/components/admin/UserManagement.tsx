@@ -29,6 +29,7 @@ import { Plus, Mail, RefreshCw, Search, Check, Clock, UserX, Trash2 } from "luci
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Database } from "@/integrations/supabase/types";
 import { getProfileDisplayName } from "@/lib/profileName";
+import { formatShortDate } from "@/lib/dateUtils";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -229,14 +230,6 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(language === "fr" ? "fr-FR" : "en-US", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
   // Filter users
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
@@ -391,7 +384,7 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {formatDate(user.created_at)}
+                    {formatShortDate(user.created_at, language)}
                   </TableCell>
                   <TableCell>
                     {user.invitation_accepted ? (

@@ -258,10 +258,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
       validateSession();
     }, 5 * 60 * 1000);
 
+    // Validate session when tab becomes visible or window gets focus
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        console.log("App became visible, validating session...");
+        validateSession();
+      }
+    };
+
+    const handleFocus = () => {
+      console.log("Window focused, validating session...");
+      validateSession();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
       clearInterval(validationInterval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
     };
   }, [clearAuthState, fetchProfile, fetchRoles, forceSignOut, validateSession]);
 
@@ -274,7 +292,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error("Error during manual sign out:", error);
+    }
     clearAuthState();
   };
 
