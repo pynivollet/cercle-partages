@@ -21,18 +21,21 @@
 
   "packageRules": [
     {
-      "description": "Automerge and group all PATCH updates (safe deps only)",
-      "matchUpdateTypes": ["patch"], 
-      "groupName": "all patch dependencies (safe)",
-      "automerge": true,
-      "labels": ["dependencies", "patch", "automerge"],
-      "stabilityDays": 0
+      "matchUpdateTypes": ["minor"],
+      "groupName": "all minor dependencies",
+      "automerge": false,
+      "labels": ["dependencies", "minor"]
     },
     {
-      "description": "Disable automerge for minor and major updates",
-      "matchUpdateTypes": ["minor", "major"],
+      "matchUpdateTypes": ["patch"],
+      "groupName": "all patch dependencies",
+      "automerge": true,
+      "labels": ["dependencies", "patch", "automerge"]
+    },
+    {
+      "matchUpdateTypes": ["major"],
       "automerge": false,
-      "labels": ["dependencies", "needs-review"]
+      "labels": ["dependencies", "major"]
     }
   ]
 }
