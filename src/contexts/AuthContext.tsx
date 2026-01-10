@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
@@ -37,8 +37,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [authLoading, setAuthLoading] = useState(true);
   const [rolesLoading, setRolesLoading] = useState(true);
+  
+  // Track if initial load is complete to avoid race conditions
+  const initialLoadComplete = useRef(false);
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
@@ -47,14 +50,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     
     if (error) {
       console.error("Error fetching profile:", error);
-      return;
+      return null;
     }
     
     setProfile(data);
+    return data;
   }, []);
 
-  const fetchRoles = useCallback(async (userId: string) => {
-    setRolesLoading(true);
+  const fetchRoles = useCallback(async (userId: string): Promise<AppRole[]> => {
     try {
       const { data, error } = await supabase
         .from("user_roles")
@@ -63,16 +66,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       if (error) {
         console.error("Error fetching roles:", error);
-        return;
+        return [];
       }
       
-      if (data) {
-        setRoles(data.map((r) => r.role));
-      }
+      const userRoles = data ? data.map((r) => r.role) : [];
+      setRoles(userRoles);
+      return userRoles;
     } catch (err) {
       console.error("Exception in fetchRoles:", err);
-    } finally {
-      setRolesLoading(false);
+      return [];
     }
   }, []);
 
@@ -152,22 +154,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [clearAuthState, forceSignOut]);
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (user) {
-      await Promise.all([fetchProfile(user.id), fetchRoles(user.id)]);
+      setRolesLoading(true);
+      try {
+        await Promise.all([fetchProfile(user.id), fetchRoles(user.id)]);
+      } finally {
+        setRolesLoading(false);
+      }
     }
-  };
+  }, [user, fetchProfile, fetchRoles]);
 
   useEffect(() => {
     let mounted = true;
 
-    // Set up auth state listener
+    // CRITICAL: Set up auth state listener FIRST (before checking session)
+    // This ensures we don't miss any auth events during initialization
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         if (!mounted) return;
 
         console.log("Auth state change:", event, !!currentSession);
 
+        // Handle sign out immediately
         if (event === "SIGNED_OUT") {
           clearAuthState();
           setAuthLoading(false);
@@ -175,25 +184,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return;
         }
 
+        // Update session and user synchronously
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
         if (currentSession?.user) {
-          // Si on a un utilisateur, on doit s'assurer que les chargements sont actifs
+          // CRITICAL: Use setTimeout(0) to defer Supabase calls
+          // This prevents deadlocks in the auth state change callback
           setRolesLoading(true);
-          fetchProfile(currentSession.user.id);
-          fetchRoles(currentSession.user.id);
+          setTimeout(() => {
+            if (!mounted) return;
+            Promise.all([
+              fetchProfile(currentSession.user.id),
+              fetchRoles(currentSession.user.id)
+            ]).finally(() => {
+              if (mounted) {
+                setRolesLoading(false);
+              }
+            });
+          }, 0);
         } else {
           setProfile(null);
           setRoles([]);
           setRolesLoading(false);
         }
         
-        setAuthLoading(false);
+        // Only set authLoading to false after initial load
+        if (initialLoadComplete.current) {
+          setAuthLoading(false);
+        }
       }
     );
 
-    // Initial session check
+    // THEN check for existing session
     const initializeAuth = async () => {
       try {
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
@@ -203,31 +226,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (error) {
           console.error("Error getting session:", error);
           await forceSignOut();
-          setAuthLoading(false);
-          setRolesLoading(false);
           return;
         }
 
         if (initialSession?.user) {
           setSession(initialSession);
           setUser(initialSession.user);
-          // On attend la résolution du profil et des rôles
+          // Wait for profile and roles to be fetched
           await Promise.all([
             fetchProfile(initialSession.user.id),
             fetchRoles(initialSession.user.id)
           ]);
         } else {
           clearAuthState();
-          setRolesLoading(false);
         }
       } catch (err) {
         console.error("Initialization error:", err);
-        if (mounted) {
-          setRolesLoading(false);
-        }
       } finally {
         if (mounted) {
+          initialLoadComplete.current = true;
           setAuthLoading(false);
+          setRolesLoading(false);
         }
       }
     };

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const formSchema = z
   .object({
@@ -32,7 +33,7 @@ type PageState =
 export default function AcceptInvitation() {
   const navigate = useNavigate();
   const { t } = useLanguage();
-
+  const { refreshProfile } = useAuth();
   const [pageState, setPageState] = useState<PageState>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -181,6 +182,9 @@ export default function AcceptInvitation() {
         toast.error(t.common.error);
         return;
       }
+
+      // 3) Refresh profile in AuthContext so the Profile page has the data immediately
+      await refreshProfile();
 
       toast.success(t.acceptInvitation.success);
       navigate(redirectAfterSuccess, { replace: true });
