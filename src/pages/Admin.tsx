@@ -32,6 +32,8 @@ import PresenterManagement from "@/components/admin/PresenterManagement";
 import UserManagement from "@/components/admin/UserManagement";
 import EventDocuments from "@/components/admin/EventDocuments";
 import EventForm, { EventFormData } from "@/components/admin/EventForm";
+import VideoUploadDialog from "@/components/admin/VideoUploadDialog";
+import EventVideoUpload from "@/components/admin/EventVideoUpload";
 import { formatShortDate } from "@/lib/dateUtils";
 
 type EventCategory = Database["public"]["Enums"]["event_category"];
@@ -87,6 +89,9 @@ const Admin = () => {
     newDate: string;
     formData: EventFormData;
   } | null>(null);
+  
+  // Video upload dialog state
+  const [videoUploadEvent, setVideoUploadEvent] = useState<Event | null>(null);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -244,12 +249,17 @@ const Admin = () => {
   };
 
   const handleMarkCompleted = async (eventId: string) => {
+    const event = events.find(e => e.id === eventId);
     const { error } = await updateEvent(eventId, { status: "completed" });
     if (error) {
       toast.error(t.auth.error);
     } else {
       setEvents(events.map((e) => (e.id === eventId ? { ...e, status: "completed" } : e)));
       toast.success("Événement marqué comme terminé");
+      // Show video upload dialog
+      if (event) {
+        setVideoUploadEvent({ ...event, status: "completed" });
+      }
     }
   };
 
@@ -431,6 +441,14 @@ const Admin = () => {
                             onPresenterCreated={(presenter) => setPresenters([...presenters, presenter])}
                             eventId={editingEvent.id}
                           />
+                          {editingEvent.status === "completed" && (
+                            <div className="pt-4 border-t border-border">
+                              <EventVideoUpload 
+                                eventId={editingEvent.id} 
+                                initialVideoUrl={(editingEvent as Event & { video_url?: string | null }).video_url || null}
+                              />
+                            </div>
+                          )}
                           <div className="pt-4 border-t border-border">
                             <EventDocuments eventId={editingEvent.id} userId={user?.id || ""} />
                           </div>
@@ -654,6 +672,18 @@ const Admin = () => {
                   newDate={dateChangeDialogData.newDate}
                   onConfirm={handleDateChangeConfirm}
                   onSkip={handleDateChangeSkip}
+                />
+              )}
+
+              {/* Video Upload Dialog */}
+              {videoUploadEvent && (
+                <VideoUploadDialog
+                  open={!!videoUploadEvent}
+                  onOpenChange={(open) => !open && setVideoUploadEvent(null)}
+                  eventId={videoUploadEvent.id}
+                  eventTitle={videoUploadEvent.title}
+                  onComplete={() => setVideoUploadEvent(null)}
+                  existingVideoUrl={(videoUploadEvent as Event & { video_url?: string | null }).video_url}
                 />
               )}
             </motion.div>

@@ -142,6 +142,7 @@ export type Database = {
           title: string
           topic: string | null
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           category?: Database["public"]["Enums"]["event_category"] | null
@@ -158,6 +159,7 @@ export type Database = {
           title: string
           topic?: string | null
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           category?: Database["public"]["Enums"]["event_category"] | null
@@ -174,6 +176,7 @@ export type Database = {
           title?: string
           topic?: string | null
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: [
           {
