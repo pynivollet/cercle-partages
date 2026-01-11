@@ -22,7 +22,7 @@ import {
 import { getEventDocuments, EventDocument } from "@/services/eventDocuments";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { FileText, Users } from "lucide-react";
+import { FileText, Users, PlayCircle } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { getProfileDisplayName, getProfileInitials } from "@/lib/profileName";
 import { formatLongDate, formatTime } from "@/lib/dateUtils";
@@ -145,6 +145,8 @@ const EventDetail = () => {
 
   const isRegistered = !!event.user_registration;
   const isPastEvent = new Date(event.event_date) < new Date();
+  const isCompletedEvent = event.status === "completed";
+  const hasVideo = !!event.video_url;
 
   // Use presenters from RPC response
   const presenters = event.presenters || [];
@@ -200,6 +202,26 @@ const EventDetail = () => {
                 </div>
               )}
 
+
+              {/* Video replay section - only for authenticated users and completed events */}
+              {user && isCompletedEvent && hasVideo && (
+                <div className="mt-12 pt-8 border-t border-border">
+                  <div className="flex items-center gap-2 mb-4">
+                    <PlayCircle className="w-5 h-5 text-primary" />
+                    <h3 className="font-serif text-xl">{t.events.videoReplay}</h3>
+                  </div>
+                  <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                    <video
+                      src={event.video_url!}
+                      controls
+                      className="w-full h-full"
+                      preload="metadata"
+                    >
+                      {t.events.videoNotSupported}
+                    </video>
+                  </div>
+                </div>
+              )}
 
               {/* Documents section - only for authenticated users */}
               {user && documents.length > 0 && (
