@@ -111,6 +111,8 @@ export const translations = {
       statusUpcoming: "À venir",
       statusPast: "Passé",
       titleLabel: "Titre",
+      videoReplay: "Rediffusion",
+      videoNotSupported: "Votre navigateur ne supporte pas la lecture de cette vidéo.",
     },
     // Archives
     archives: {
@@ -413,6 +415,8 @@ export const translations = {
       statusUpcoming: "Upcoming",
       statusPast: "Past",
       titleLabel: "Title",
+      videoReplay: "Video Replay",
+      videoNotSupported: "Your browser does not support video playback.",
     },
     // Archives
     archives: {
