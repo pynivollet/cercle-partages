@@ -25,7 +25,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Mail, RefreshCw, Search, Check, Clock, UserX, Trash2 } from "lucide-react";
+import { Plus, Mail, RefreshCw, Search, Check, Clock, UserX, Trash2, ShieldCheck, Shield } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Database } from "@/integrations/supabase/types";
 import { getProfileDisplayName } from "@/lib/profileName";
@@ -66,6 +66,10 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
   // Delete user state
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Toggle admin role state
+  const [userToToggleAdmin, setUserToToggleAdmin] = useState<User | null>(null);
+  const [isTogglingAdmin, setIsTogglingAdmin] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -203,6 +207,55 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
       toast.error(t.admin.errors.deleteError);
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleToggleAdminRole = async () => {
+    if (!userToToggleAdmin) return;
+
+    setIsTogglingAdmin(true);
+    const isCurrentlyAdmin = userToToggleAdmin.roles.includes("admin");
+    
+    try {
+      if (isCurrentlyAdmin) {
+        // Remove admin role
+        const { error } = await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", userToToggleAdmin.id)
+          .eq("role", "admin");
+
+        if (error) throw error;
+        toast.success(
+          language === "fr" 
+            ? `${userToToggleAdmin.email} n'est plus administrateur` 
+            : `${userToToggleAdmin.email} is no longer an admin`
+        );
+      } else {
+        // Add admin role
+        const { error } = await supabase
+          .from("user_roles")
+          .insert({ user_id: userToToggleAdmin.id, role: "admin" as const });
+
+        if (error) throw error;
+        toast.success(
+          language === "fr" 
+            ? `${userToToggleAdmin.email} est maintenant administrateur` 
+            : `${userToToggleAdmin.email} is now an admin`
+        );
+      }
+
+      setUserToToggleAdmin(null);
+      fetchUsers();
+    } catch (err) {
+      console.error("Toggle admin error:", err);
+      toast.error(
+        language === "fr" 
+          ? "Erreur lors de la modification du rôle" 
+          : "Error updating role"
+      );
+    } finally {
+      setIsTogglingAdmin(false);
     }
   };
 
@@ -401,6 +454,28 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
+                      {/* Toggle admin button - only for accepted invitations */}
+                      {user.invitation_accepted && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setUserToToggleAdmin(user)}
+                          title={user.roles.includes("admin") 
+                            ? (language === "fr" ? "Retirer les droits admin" : "Remove admin rights")
+                            : (language === "fr" ? "Promouvoir admin" : "Promote to admin")
+                          }
+                          className={user.roles.includes("admin") 
+                            ? "text-destructive hover:text-destructive hover:bg-destructive/10" 
+                            : "text-primary hover:text-primary hover:bg-primary/10"
+                          }
+                        >
+                          {user.roles.includes("admin") ? (
+                            <Shield className="w-4 h-4" />
+                          ) : (
+                            <ShieldCheck className="w-4 h-4" />
+                          )}
+                        </Button>
+                      )}
                       {!user.invitation_accepted && (
                         <Button
                           variant="ghost"
@@ -455,6 +530,51 @@ const UserManagement = ({ onUsersLoaded }: UserManagementProps) => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? t.admin.deleting : t.admin.deleteConfirm}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Toggle Admin Role Confirmation Dialog */}
+      <AlertDialog open={!!userToToggleAdmin} onOpenChange={(open) => !open && setUserToToggleAdmin(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {userToToggleAdmin?.roles.includes("admin")
+                ? (language === "fr" ? "Retirer les droits administrateur ?" : "Remove admin rights?")
+                : (language === "fr" ? "Promouvoir en administrateur ?" : "Promote to admin?")
+              }
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {userToToggleAdmin?.roles.includes("admin")
+                ? (language === "fr" 
+                    ? `${userToToggleAdmin?.email} n'aura plus accès aux fonctionnalités d'administration.`
+                    : `${userToToggleAdmin?.email} will no longer have access to admin features.`
+                  )
+                : (language === "fr"
+                    ? `${userToToggleAdmin?.email} aura accès à toutes les fonctionnalités d'administration.`
+                    : `${userToToggleAdmin?.email} will have access to all admin features.`
+                  )
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isTogglingAdmin}>{t.common.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleToggleAdminRole}
+              disabled={isTogglingAdmin}
+              className={userToToggleAdmin?.roles.includes("admin") 
+                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                : ""
+              }
+            >
+              {isTogglingAdmin 
+                ? t.common.loading 
+                : (userToToggleAdmin?.roles.includes("admin")
+                    ? (language === "fr" ? "Retirer" : "Remove")
+                    : (language === "fr" ? "Promouvoir" : "Promote")
+                  )
+              }
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
