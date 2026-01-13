@@ -60,6 +60,9 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Completed events have restricted editing
+  const isCompleted = status === "completed";
+
   useEffect(() => {
     if (initialData) {
       setTitle(initialData.title);
@@ -203,7 +206,12 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
             value={date}
             onChange={(e) => setDate(e.target.value)}
             required
+            disabled={isCompleted}
+            className={isCompleted ? "opacity-50 cursor-not-allowed" : ""}
           />
+          {isCompleted && (
+            <p className="text-xs text-muted-foreground">Non modifiable pour un événement terminé</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label>Heure</Label>
@@ -211,6 +219,8 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
+            disabled={isCompleted}
+            className={isCompleted ? "opacity-50 cursor-not-allowed" : ""}
           />
         </div>
       </div>
@@ -228,14 +238,31 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
           value={participantLimit}
           onChange={(e) => setParticipantLimit(e.target.value)}
           min="1"
+          disabled={isCompleted}
+          className={isCompleted ? "opacity-50 cursor-not-allowed" : ""}
         />
+        {isCompleted && (
+          <p className="text-xs text-muted-foreground">Non modifiable pour un événement terminé</p>
+        )}
       </div>
-      <PresenterSelectorDialog
-        presenters={presenters}
-        selectedIds={presenterIds}
-        onSelectionChange={handleSelectionChange}
-        onPresenterCreated={onPresenterCreated}
-      />
+      {isCompleted ? (
+        <div className="space-y-2">
+          <Label>Intervenant(s)</Label>
+          <div className="p-3 rounded-md border border-border bg-muted/50 text-sm">
+            {presenterIds.length > 0 
+              ? presenters.filter(p => presenterIds.includes(p.id)).map(p => `${p.first_name || ''} ${p.last_name || ''}`).join(', ')
+              : "Aucun intervenant"}
+          </div>
+          <p className="text-xs text-muted-foreground">Non modifiable pour un événement terminé</p>
+        </div>
+      ) : (
+        <PresenterSelectorDialog
+          presenters={presenters}
+          selectedIds={presenterIds}
+          onSelectionChange={handleSelectionChange}
+          onPresenterCreated={onPresenterCreated}
+        />
+      )}
 
       {/* Image upload */}
       <div className="space-y-2">

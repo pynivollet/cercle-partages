@@ -27,12 +27,12 @@ import { getEventPresenters, setEventPresenters } from "@/services/eventPresente
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, FileText, Pencil, Send, XCircle, CheckCircle, Trash2, UserPlus } from "lucide-react";
+import { Plus, FileText, Pencil, Send, XCircle, Trash2, UserPlus } from "lucide-react";
 import PresenterManagement from "@/components/admin/PresenterManagement";
 import UserManagement from "@/components/admin/UserManagement";
 import EventDocuments from "@/components/admin/EventDocuments";
 import EventForm, { EventFormData } from "@/components/admin/EventForm";
-import VideoUploadDialog from "@/components/admin/VideoUploadDialog";
+
 import EventVideoUpload from "@/components/admin/EventVideoUpload";
 import { formatShortDate } from "@/lib/dateUtils";
 
@@ -89,9 +89,6 @@ const Admin = () => {
     newDate: string;
     formData: EventFormData;
   } | null>(null);
-  
-  // Video upload dialog state
-  const [videoUploadEvent, setVideoUploadEvent] = useState<Event | null>(null);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -248,20 +245,6 @@ const Admin = () => {
     return t.categories[category as keyof typeof t.categories] || category;
   };
 
-  const handleMarkCompleted = async (eventId: string) => {
-    const event = events.find(e => e.id === eventId);
-    const { error } = await updateEvent(eventId, { status: "completed" });
-    if (error) {
-      toast.error(t.auth.error);
-    } else {
-      setEvents(events.map((e) => (e.id === eventId ? { ...e, status: "completed" } : e)));
-      toast.success("Événement marqué comme terminé");
-      // Show video upload dialog
-      if (event) {
-        setVideoUploadEvent({ ...event, status: "completed" });
-      }
-    }
-  };
 
   const handleEventPublished = () => {
     setPublishDialogEvent(null);
@@ -553,25 +536,6 @@ const Admin = () => {
                                 <UserPlus className="w-4 h-4" />
                               </Button>
                               <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleMarkCompleted(event.id)}
-                                title="Marquer comme terminé"
-                                className="hidden sm:inline-flex"
-                              >
-                                <CheckCircle className="w-4 h-4 sm:mr-2" />
-                                <span className="hidden sm:inline">Terminé</span>
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleMarkCompleted(event.id)}
-                                title="Marquer comme terminé"
-                                className="sm:hidden"
-                              >
-                                <CheckCircle className="w-4 h-4" />
-                              </Button>
-                              <Button
                                 variant="destructive"
                                 size="sm"
                                 onClick={() => setCancelDialogEvent(event)}
@@ -675,17 +639,6 @@ const Admin = () => {
                 />
               )}
 
-              {/* Video Upload Dialog */}
-              {videoUploadEvent && (
-                <VideoUploadDialog
-                  open={!!videoUploadEvent}
-                  onOpenChange={(open) => !open && setVideoUploadEvent(null)}
-                  eventId={videoUploadEvent.id}
-                  eventTitle={videoUploadEvent.title}
-                  onComplete={() => setVideoUploadEvent(null)}
-                  existingVideoUrl={(videoUploadEvent as Event & { video_url?: string | null }).video_url}
-                />
-              )}
             </motion.div>
           ) : activeTab === "presenters" ? (
             <PresenterManagement
