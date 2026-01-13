@@ -168,28 +168,43 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
+          disabled={isCompleted}
+          className={isCompleted ? "opacity-50 cursor-not-allowed" : ""}
         />
+        {isCompleted && (
+          <p className="text-xs text-muted-foreground">Non modifiable pour un événement terminé</p>
+        )}
       </div>
-      <div className="space-y-2">
-        <Label>{t.categories.title}</Label>
-        <Select
-          value={category}
-          onValueChange={(v) => setCategory(v as EventCategory)}
-        >
-          <SelectTrigger className="bg-background">
-            <SelectValue placeholder="Sélectionner une catégorie..." />
-          </SelectTrigger>
-          <SelectContent className="bg-background border border-border z-50">
-            <SelectItem value="geopolitique">{t.categories.geopolitique}</SelectItem>
-            <SelectItem value="enjeux_climatiques">{t.categories.enjeux_climatiques}</SelectItem>
-            <SelectItem value="societe_violences">{t.categories.societe_violences}</SelectItem>
-            <SelectItem value="idees_cultures_humanites">{t.categories.idees_cultures_humanites}</SelectItem>
-            <SelectItem value="arts_artistes">{t.categories.arts_artistes}</SelectItem>
-            <SelectItem value="economie_locale">{t.categories.economie_locale}</SelectItem>
-            <SelectItem value="science_moderne">{t.categories.science_moderne}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {isCompleted ? (
+        <div className="space-y-2">
+          <Label>{t.categories.title}</Label>
+          <div className="p-3 rounded-md border border-border bg-muted/50 text-sm opacity-50">
+            {category ? t.categories[category] : "Aucune catégorie"}
+          </div>
+          <p className="text-xs text-muted-foreground">Non modifiable pour un événement terminé</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <Label>{t.categories.title}</Label>
+          <Select
+            value={category}
+            onValueChange={(v) => setCategory(v as EventCategory)}
+          >
+            <SelectTrigger className="bg-background">
+              <SelectValue placeholder="Sélectionner une catégorie..." />
+            </SelectTrigger>
+            <SelectContent className="bg-background border border-border z-50">
+              <SelectItem value="geopolitique">{t.categories.geopolitique}</SelectItem>
+              <SelectItem value="enjeux_climatiques">{t.categories.enjeux_climatiques}</SelectItem>
+              <SelectItem value="societe_violences">{t.categories.societe_violences}</SelectItem>
+              <SelectItem value="idees_cultures_humanites">{t.categories.idees_cultures_humanites}</SelectItem>
+              <SelectItem value="arts_artistes">{t.categories.arts_artistes}</SelectItem>
+              <SelectItem value="economie_locale">{t.categories.economie_locale}</SelectItem>
+              <SelectItem value="science_moderne">{t.categories.science_moderne}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       <div className="space-y-2">
         <Label>Description</Label>
         <Textarea
@@ -229,7 +244,12 @@ const EventForm = ({ presenters, initialData, onSubmit, submitLabel, isEdit, onP
         <Input
           value={location}
           onChange={(e) => setLocation(e.target.value)}
+          disabled={isCompleted}
+          className={isCompleted ? "opacity-50 cursor-not-allowed" : ""}
         />
+        {isCompleted && (
+          <p className="text-xs text-muted-foreground">Non modifiable pour un événement terminé</p>
+        )}
       </div>
       <div className="space-y-2">
         <Label>Limite de participants</Label>
