@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 import Hero from "@/components/home/Hero";
 import EventCalendar from "@/components/home/EventCalendar";
 import Philosophy from "@/components/home/Philosophy";
+import ContactForm from "@/components/home/ContactForm";
 
 const Index = () => {
   return (
@@ -12,6 +13,7 @@ const Index = () => {
         <Hero />
         <EventCalendar />
         <Philosophy />
+        <ContactForm />
       </main>
       <Footer />
     </div>
