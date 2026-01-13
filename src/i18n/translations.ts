@@ -267,6 +267,26 @@ export const translations = {
       add: "Ajouter",
       close: "Fermer",
     },
+    // Contact
+    contact: {
+      title: "Contact",
+      subtitle: "Pour toute demande, veuillez contacter Bernard Nivollet via le formulaire ci-dessous.",
+      reasonLabel: "Motif de contact",
+      reasonPlaceholder: "Sélectionnez un motif...",
+      messageLabel: "Votre message",
+      messagePlaceholder: "Décrivez votre demande...",
+      submit: "Envoyer",
+      sending: "Envoi en cours...",
+      successTitle: "Message envoyé !",
+      successMessage: "Votre message a bien été envoyé. Bernard vous répondra dans les meilleurs délais.",
+      reasons: {
+        connexionIssue: "Problème de connexion",
+        interventionRequest: "Demande d'intervention",
+        generalRemark: "Remarque diverse",
+        membershipRequest: "Demande d'adhésion",
+        other: "Autre",
+      },
+    },
     // Footer
     footer: {
       about: "À propos",
@@ -276,7 +296,7 @@ export const translations = {
       rights: "Tous droits réservés",
       privacy: "Confidentialité",
       invitationOnly: "Le Cercle Partages est accessible sur invitation uniquement.",
-      contactPerson: "Pour toute demande, veuillez contacter Bernard Nivollet à bnivollet@gmail.com.",
+      contactPerson: "Pour toute demande, veuillez contacter Bernard Nivollet via le formulaire dans la section Contact.",
     },
     // Months
     months: {
@@ -571,6 +591,26 @@ export const translations = {
       add: "Add",
       close: "Close",
     },
+    // Contact
+    contact: {
+      title: "Contact",
+      subtitle: "For any request, please contact Bernard Nivollet using the form below.",
+      reasonLabel: "Reason for contact",
+      reasonPlaceholder: "Select a reason...",
+      messageLabel: "Your message",
+      messagePlaceholder: "Describe your request...",
+      submit: "Send",
+      sending: "Sending...",
+      successTitle: "Message sent!",
+      successMessage: "Your message has been sent successfully. Bernard will respond as soon as possible.",
+      reasons: {
+        connexionIssue: "Login issue",
+        interventionRequest: "Presentation request",
+        generalRemark: "General remark",
+        membershipRequest: "Membership request",
+        other: "Other",
+      },
+    },
     // Footer
     footer: {
       about: "About",
@@ -580,7 +620,7 @@ export const translations = {
       rights: "All rights reserved",
       privacy: "Privacy",
       invitationOnly: "Cercle Partages is accessible by invitation only.",
-      contactPerson: "For any request, please contact Bernard Nivollet at bnivollet@gmail.com.",
+      contactPerson: "For any request, please contact Bernard Nivollet via the form in the Contact section.",
     },
     // Months
     months: {
