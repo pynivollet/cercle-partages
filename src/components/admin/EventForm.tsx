@@ -35,6 +35,13 @@ export interface EventFormData {
   imageUrl: string | null;
 }
 
+// Helper to check if a date is in the past
+export const isDateInPast = (dateStr: string, timeStr: string): boolean => {
+  const eventDateTime = new Date(`${dateStr}T${timeStr}`);
+  const now = new Date();
+  return eventDateTime < now;
+};
+
 interface EventFormProps {
   presenters: Profile[];
   initialData?: EventFormData;
