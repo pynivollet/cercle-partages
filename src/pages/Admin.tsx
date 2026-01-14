@@ -31,8 +31,7 @@ import { Plus, FileText, Pencil, Send, XCircle, Trash2, UserPlus } from "lucide-
 import PresenterManagement from "@/components/admin/PresenterManagement";
 import UserManagement from "@/components/admin/UserManagement";
 import EventDocuments from "@/components/admin/EventDocuments";
-import EventForm, { EventFormData, isDateInPast } from "@/components/admin/EventForm";
-import PastEventDialog from "@/components/admin/PastEventDialog";
+import EventForm, { EventFormData } from "@/components/admin/EventForm";
 
 import EventVideoUpload from "@/components/admin/EventVideoUpload";
 import { formatShortDate } from "@/lib/dateUtils";
@@ -91,9 +90,6 @@ const Admin = () => {
     formData: EventFormData;
   } | null>(null);
 
-  // Past event confirmation dialog state
-  const [pastEventDialogData, setPastEventDialogData] = useState<EventFormData | null>(null);
-
   const fetchData = async () => {
     setIsLoading(true);
     const [eventsRes, presentersRes, allProfilesRes] = await Promise.all([
@@ -115,24 +111,7 @@ const Admin = () => {
   const handleCreateEvent = async (formData: EventFormData) => {
     if (!user) return;
     
-    // Check if date is in the past
-    if (isDateInPast(formData.date, formData.time)) {
-      // Show confirmation dialog
-      setPastEventDialogData(formData);
-      return;
-    }
-    
-    // Proceed with normal creation
-    await performEventCreate(formData);
-  };
-
-  const performEventCreate = async (formData: EventFormData) => {
-    if (!user) return;
-    
     const eventDateTime = new Date(`${formData.date}T${formData.time}`);
-    
-    // If date is in the past, force status to "completed"
-    const finalStatus = isDateInPast(formData.date, formData.time) ? "completed" : formData.status;
     
     const { data, error } = await createEvent({
       title: formData.title,
@@ -142,7 +121,7 @@ const Admin = () => {
       location: formData.location || null,
       participant_limit: formData.participantLimit ? parseInt(formData.participantLimit) : null,
       presenter_id: formData.presenterIds[0] || null,
-      status: finalStatus,
+      status: formData.status,
       created_by: user.id,
       category: formData.category || null,
       image_url: formData.imageUrl,
@@ -154,26 +133,12 @@ const Admin = () => {
       if (formData.presenterIds.length > 0) {
         await setEventPresenters(data.id, formData.presenterIds);
       }
-      const statusMsg = finalStatus === "completed" 
-        ? "Événement créé avec le statut Terminé" 
-        : "Événement créé !";
-      toast.success(statusMsg);
+      toast.success("Événement créé !");
       setEvents([data, ...events]);
       setIsCreateEventOpen(false);
       setNewlyCreatedEvent({ event: data, presenterIds: formData.presenterIds });
       setIsAddPdfDialogOpen(true);
     }
-  };
-
-  const handlePastEventConfirm = async () => {
-    if (pastEventDialogData) {
-      await performEventCreate(pastEventDialogData);
-      setPastEventDialogData(null);
-    }
-  };
-
-  const handlePastEventCancel = () => {
-    setPastEventDialogData(null);
   };
 
   const handleAddPdfNow = () => {
@@ -549,20 +514,14 @@ const Admin = () => {
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
-                              {/* Only show Publish button if event date is not in the past */}
-                              {!isDateInPast(
-                                new Date(event.event_date).toISOString().split("T")[0],
-                                new Date(event.event_date).toTimeString().slice(0, 5)
-                              ) && (
-                                <Button
-                                  variant="nightBlue"
-                                  size="sm"
-                                  onClick={() => setPublishDialogEvent(event)}
-                                >
-                                  <Send className="w-4 h-4 mr-2" />
-                                  Publier
-                                </Button>
-                              )}
+                              <Button
+                                variant="nightBlue"
+                                size="sm"
+                                onClick={() => setPublishDialogEvent(event)}
+                              >
+                                <Send className="w-4 h-4 mr-2" />
+                                Publier
+                              </Button>
                             </>
                           )}
                           
@@ -679,14 +638,6 @@ const Admin = () => {
                   onSkip={handleDateChangeSkip}
                 />
               )}
-
-              {/* Past Event Confirmation Dialog */}
-              <PastEventDialog
-                open={!!pastEventDialogData}
-                onOpenChange={(open) => !open && setPastEventDialogData(null)}
-                onConfirm={handlePastEventConfirm}
-                onCancel={handlePastEventCancel}
-              />
 
             </motion.div>
           ) : activeTab === "presenters" ? (
