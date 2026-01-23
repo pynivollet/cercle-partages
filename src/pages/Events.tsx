@@ -105,18 +105,6 @@ const Events = () => {
     }
   };
 
-  const SortableHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
-    <TableHead 
-      className="cursor-pointer hover:bg-muted/50 transition-colors select-none"
-      onClick={() => handleTableSort(field)}
-    >
-      <div className="flex items-center gap-1">
-        {children}
-        <ArrowUpDown className={`w-3 h-3 ${sortField === field ? "text-primary" : "text-muted-foreground/50"}`} />
-      </div>
-    </TableHead>
-  );
-
   const EventCard = ({ event, index }: { event: EventWithPresenter; index: number }) => (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -275,11 +263,43 @@ const Events = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <SortableHeader field="date">{t.events.dateAndTime}</SortableHeader>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 transition-colors select-none"
+                      onClick={() => handleTableSort("date")}
+                    >
+                      <div className="flex items-center gap-1">
+                        {t.events.dateAndTime}
+                        <ArrowUpDown className={`w-3 h-3 ${sortField === "date" ? "text-primary" : "text-muted-foreground/50"}`} />
+                      </div>
+                    </TableHead>
                     <TableHead>{t.admin.status}</TableHead>
-                    <SortableHeader field="category">{t.categories.title}</SortableHeader>
-                    <SortableHeader field="title">{t.events.titleLabel}</SortableHeader>
-                    <SortableHeader field="presenter">{t.nav.presenters}</SortableHeader>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 transition-colors select-none"
+                      onClick={() => handleTableSort("category")}
+                    >
+                      <div className="flex items-center gap-1">
+                        {t.categories.title}
+                        <ArrowUpDown className={`w-3 h-3 ${sortField === "category" ? "text-primary" : "text-muted-foreground/50"}`} />
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 transition-colors select-none"
+                      onClick={() => handleTableSort("title")}
+                    >
+                      <div className="flex items-center gap-1">
+                        {t.events.titleLabel}
+                        <ArrowUpDown className={`w-3 h-3 ${sortField === "title" ? "text-primary" : "text-muted-foreground/50"}`} />
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 transition-colors select-none"
+                      onClick={() => handleTableSort("presenter")}
+                    >
+                      <div className="flex items-center gap-1">
+                        {t.nav.presenters}
+                        <ArrowUpDown className={`w-3 h-3 ${sortField === "presenter" ? "text-primary" : "text-muted-foreground/50"}`} />
+                      </div>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
