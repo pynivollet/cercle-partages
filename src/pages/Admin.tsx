@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -27,7 +28,7 @@ import { getEventPresenters, setEventPresenters } from "@/services/eventPresente
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, FileText, Pencil, Send, XCircle, Trash2, UserPlus } from "lucide-react";
+import { Plus, FileText, Pencil, Send, XCircle, Trash2, UserPlus, Bell } from "lucide-react";
 import PresenterManagement from "@/components/admin/PresenterManagement";
 import UserManagement from "@/components/admin/UserManagement";
 import EventDocuments from "@/components/admin/EventDocuments";
@@ -62,6 +63,7 @@ type Event = Database["public"]["Tables"]["events"]["Row"];
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 const Admin = () => {
+  const navigate = useNavigate();
   const { t, language } = useLanguage();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"events" | "presenters" | "users">("events");
@@ -343,10 +345,21 @@ const Admin = () => {
             transition={{ duration: 0.8 }}
             className="mb-12"
           >
-            <p className="font-sans text-sm tracking-widest uppercase text-muted-foreground mb-4">
-              {t.admin.title}
-            </p>
-            <h1 className="text-headline text-foreground">{t.admin.title}</h1>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="font-sans text-sm tracking-widest uppercase text-muted-foreground mb-4">
+                  {t.admin.title}
+                </p>
+                <h1 className="text-headline text-foreground">{t.admin.title}</h1>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/admin/rappels")}
+              >
+                <Bell className="w-4 h-4 mr-2" />
+                Envoyer des rappels
+              </Button>
+            </div>
           </motion.div>
 
           {/* Tabs */}
