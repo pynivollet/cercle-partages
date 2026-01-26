@@ -29,8 +29,8 @@
     {
       "matchUpdateTypes": ["minor"],
       "groupName": "all minor dependencies",
-      "automerge": false,
-      "labels": ["dependencies", "minor"]
+      "automerge": true,
+      "labels": ["dependencies", "minor", "automerge"]
     },
     {
       "matchUpdateTypes": ["patch"],
