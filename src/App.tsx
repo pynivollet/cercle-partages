@@ -18,6 +18,7 @@ import AcceptInvitation from "./pages/AcceptInvitation";
 import PresenterProfile from "./pages/PresenterProfile";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
+import AdminReminders from "./pages/AdminReminders";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -90,6 +91,14 @@ function App() {
                   element={
                     <ProtectedRoute requiredRoles={["admin"]}>
                       <Admin />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/rappels"
+                  element={
+                    <ProtectedRoute requiredRoles={["admin"]}>
+                      <AdminReminders />
                     </ProtectedRoute>
                   }
                 />

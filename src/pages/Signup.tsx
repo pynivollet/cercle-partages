@@ -95,7 +95,7 @@ const Signup = () => {
     
     const validation = signupSchema.safeParse({ firstName, lastName, password, confirmPassword });
     if (!validation.success) {
-      const firstError = validation.error.errors[0];
+      const firstError = validation.error.issues[0];
       toast.error(firstError.message);
       return;
     }
