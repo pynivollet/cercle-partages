@@ -50,7 +50,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.0.0",
     "embla-carousel-react": "^8.6.0",
-    "framer-motion": "^12.23.26",
+    "motion": "^12.23.26",
     "input-otp": "^1.4.2",
     "lovable-tagger": "^1.1.13",
     "lucide-react": "^0.577.0",
